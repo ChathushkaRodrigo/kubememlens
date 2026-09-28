@@ -79,6 +79,10 @@ kctl() { kubectl --kubeconfig "${kubeconfig}" --context "kind-${cluster}" "$@"; 
 cleanup() {
   local result=$?
   trap - EXIT
+  if [ "${result}" -ne 0 ] && [ "${created}" = true ]; then
+    source hack/lib/node-readiness-diagnostic.sh
+    if ! node_context_readiness_failure; then echo 'bounded readiness diagnostic unavailable' >&2; fi
+  fi
   if [ "${created}" = true ]; then kind delete cluster --name "${cluster}" > "${work_dir}/cleanup.log" 2>&1 || result=1; fi
   if [ "${image_created}" = true ]; then docker image rm "${image}" >/dev/null 2>&1 || result=1; fi
   if [ "${volume_image_created}" = true ]; then docker image rm "${volume_image}" >/dev/null 2>&1 || result=1; fi
