@@ -103,6 +103,7 @@ check-trace-preflight:
 	python3 -m unittest discover -s hack/ebpf-qualification -p 'test_*.py'
 
 check-trace-worker:
+	python3 -m unittest discover -s prototype/trace/worker -p 'test_*.py'
 	python3 prototype/trace/worker/prepare_sdk.py
 	go -C prototype/trace/worker mod verify
 	go -C prototype/trace/worker test -race ./...

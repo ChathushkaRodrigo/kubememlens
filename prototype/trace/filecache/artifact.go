@@ -15,7 +15,7 @@ import (
 
 const EngineSourceCommit = "e5a2855f270ca6557f4bd7e4fabaddf6760d8f50"
 const BuilderDigest = "sha256:d55d33bfd2583e721ac78972a8039fb4b207d157e06f0c623c5f8a55cee597b4"
-const EnginePatchSHA256 = "34583005d8d808e68fd5f34dae4da9073516516e090fda3aafcbed7abef022af"
+const EnginePatchSHA256 = "9c9125741d6e05cebad858c013b4ec84724cb1393f12e3310f025fc50d34236b"
 
 var ErrArtifact = errors.New("file/cache programme is not approved")
 
