@@ -36,7 +36,9 @@ func (m appModel) viewString() string {
 	b.WriteString("\n")
 	b.WriteString(truncate(m.sourceLabel(), width))
 	b.WriteString("\n")
-	if m.action.mode != actionClosed {
+	if m.historyPanel.open {
+		b.WriteString(m.renderHistoryPanel(width))
+	} else if m.action.mode != actionClosed {
 		b.WriteString(m.renderAction(width))
 	} else if m.help {
 		b.WriteString(m.renderHelp(width))
@@ -226,7 +228,7 @@ func (m appModel) renderHelp(width int) string {
 		"N / n / w / p / c jump to node, namespace, workload, pod, or container view",
 		"Enter        drill into Node/namespace Pods or Pod detail",
 		"e            explain selected entity, including Node context",
-		"v            open authorised volume context from a Pod or workload",
+		"v / H        volume context / source-labelled memory history",
 		"h / Backspace go back",
 		"k/j or arrows move selection",
 		"PgUp/PgDown  move faster",

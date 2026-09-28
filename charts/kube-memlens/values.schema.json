@@ -4,6 +4,22 @@
   "additionalProperties": false,
   "required": ["image", "namespace", "agent", "collector", "extensionTLS", "metrics", "security", "networkPolicy"],
   "properties": {
+    "memoryHistory": {
+      "type": "object", "additionalProperties": false,
+      "required": ["enabled", "url", "cluster", "namespaces", "nodes", "workloads", "credentialsSecret", "caKey", "tokenKey"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "url": {"type": "string", "maxLength": 2048, "pattern": "^(|https://[^@?#]+)$"},
+        "cluster": {"type": "string", "maxLength": 128, "pattern": "^[!-~]*$"},
+        "namespaces": {"type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "maxLength": 63, "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"}},
+        "nodes": {"type": "boolean"},
+        "workloads": {"type": "boolean"},
+        "credentialsSecret": {"type": "string", "maxLength": 253, "pattern": "^$|^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$"},
+        "caKey": {"type": "string", "maxLength": 253, "pattern": "^[-._a-zA-Z0-9]*$"},
+        "tokenKey": {"type": "string", "maxLength": 253, "pattern": "^[-._a-zA-Z0-9]*$"}
+      }
+    },
     "volumeContext": {
       "type": "object", "additionalProperties": false,
       "required": ["enabled", "namespaces"],
