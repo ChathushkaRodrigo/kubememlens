@@ -108,6 +108,7 @@ node_context_prefetch_image() {
   if ! retry_to_file 3 5 "${work_dir}/qualification-image-pull.log" \
     docker exec "${node}" timeout 30s crictl pull "${workload_image}" 2> "${work_dir}/qualification-image-pull.private.log"; then
     echo 'pinned qualification fixture image could not be fetched within the bounded preflight' >&2
+    python3 hack/node-qualification/image_pull_failure.py "${work_dir}/qualification-image-pull.private.log" >&2
     return 1
   fi
 }
