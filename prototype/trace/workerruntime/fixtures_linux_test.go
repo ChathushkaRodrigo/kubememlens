@@ -119,6 +119,10 @@ func fixtureRuntime(t *testing.T) *Runtime {
 	if err != nil {
 		t.Fatal(err)
 	}
+	path = filepath.Join(t.TempDir(), "worker")
+	if err := os.WriteFile(path, data, 0500); err != nil {
+		t.Fatal(err)
+	}
 	release := workerinstall.EngineRelease{SourceCommit: filecache.EngineSourceCommit, PatchSHA256: filecache.EnginePatchSHA256, Workers: map[string]string{runtime.GOARCH: checksum(data)}}
 	public, private, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {

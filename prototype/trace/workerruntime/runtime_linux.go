@@ -25,6 +25,7 @@ var ErrRuntime = errors.New("accepted trace worker runtime unavailable")
 type Runtime struct {
 	mu            sync.Mutex
 	configuration *workerinstall.Policy
+	executable    string
 	owned         resources
 	ctx           context.Context
 	cancel        context.CancelFunc
@@ -37,13 +38,14 @@ type Runtime struct {
 	closeErr      error
 }
 
-// New verifies installation artefacts once and retains their descriptors.
+// New verifies installation artefacts and retains the policy and bundle.
+// The sealed executable is released while idle and reverified on activation.
 // Paths and acceptance come only from node installation, never admission input.
 func New(ctx context.Context, policy *workerinstall.Policy, executable, bundle string) (result *Runtime, resultErr error) {
 	if ctx == nil || ctx.Err() != nil || policy == nil || !filepath.IsAbs(executable) || !filepath.IsAbs(bundle) {
 		return nil, ErrRuntime
 	}
-	r := &Runtime{configuration: policy, exportTarget: targetfs.ExportForWorker, idle: make(chan struct{})}
+	r := &Runtime{configuration: policy, executable: executable, exportTarget: targetfs.ExportForWorker, idle: make(chan struct{})}
 	close(r.idle)
 	retained := false
 	defer func() {
@@ -55,8 +57,11 @@ func New(ctx context.Context, policy *workerinstall.Policy, executable, bundle s
 		}
 	}()
 	var err error
-	r.owned.image, err = policy.Executable(executable, runtime.GOARCH)
+	r.owned.image, err = policy.Executable(ctx, executable, runtime.GOARCH)
 	if err != nil {
+		return nil, ErrRuntime
+	}
+	if err := r.owned.releaseImage(); err != nil {
 		return nil, ErrRuntime
 	}
 	r.owned.policy, err = policy.Descriptor()
@@ -129,10 +134,10 @@ func (r *Runtime) Prepare(ctx context.Context, spec trace.Specification, handle 
 // Unknown cleanup keeps the runtime poisoned and prevents a successful close.
 func (r *Runtime) Close(ctx context.Context) error {
 	r.closeOnce.Do(func() {
+		r.cancel()
 		r.mu.Lock()
 		defer r.mu.Unlock()
 		r.closed = true
-		r.cancel()
 		r.closeErr = r.owned.close()
 	})
 	r.mu.Lock()
@@ -155,26 +160,56 @@ func (r *Runtime) Close(ctx context.Context) error {
 	}
 }
 
-func (r *Runtime) enter() error {
+func (r *Runtime) enter(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.closed || r.poisoned || r.ctx.Err() != nil || r.running >= 2 {
+	if r.closed || r.poisoned || ctx.Err() != nil || r.ctx.Err() != nil || r.running >= 2 {
 		return ErrRuntime
 	}
 	if r.running == 0 {
+		if err := r.activateImage(ctx); err != nil {
+			return err
+		}
 		r.idle = make(chan struct{})
 	}
 	r.running++
 	return nil
 }
 
-func (r *Runtime) leave() {
+// activateImage runs under the runtime lock with no active workers.
+func (r *Runtime) activateImage(ctx context.Context) error {
+	activation, cancel := context.WithCancel(ctx)
+	stop := context.AfterFunc(r.ctx, cancel)
+	defer func() { stop(); cancel() }()
+	image, err := r.configuration.Executable(activation, r.executable, runtime.GOARCH)
+	if err != nil {
+		return ErrRuntime
+	}
+	if ctx.Err() != nil || r.ctx.Err() != nil {
+		if image.Close() != nil {
+			r.poisoned = true
+			r.cancel()
+		}
+		return ErrRuntime
+	}
+	r.owned.image = image
+	return nil
+}
+
+func (r *Runtime) leave() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.running--
 	if r.running == 0 {
+		err := r.owned.releaseImage()
 		close(r.idle)
+		if err != nil {
+			r.poisoned = true
+			r.cancel()
+			return ErrRuntime
+		}
 	}
+	return nil
 }
 
 func (r *Runtime) quarantine() {

@@ -26,7 +26,7 @@ func (a *adapter) Run(parent context.Context, spec trace.Specification, output t
 	if !a.consumed.CompareAndSwap(false, true) || parent.Err() != nil || spec != a.spec || output == nil || a.target.Target() != spec.Target() {
 		return failed, ErrRuntime
 	}
-	if a.owner.enter() != nil {
+	if a.owner.enter(parent) != nil {
 		return failed, ErrRuntime
 	}
 	defer func() {
@@ -34,7 +34,9 @@ func (a *adapter) Run(parent context.Context, spec trace.Specification, output t
 			a.owner.quarantine()
 			panic(failure)
 		}
-		a.owner.leave()
+		if a.owner.leave() != nil {
+			panic(workerprocess.ErrCleanupUnconfirmed)
+		}
 	}()
 	ctx, cancel := context.WithCancel(parent)
 	stop := context.AfterFunc(a.owner.ctx, cancel)

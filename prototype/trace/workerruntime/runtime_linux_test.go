@@ -66,6 +66,7 @@ func TestProductionExporterRejectsForgedHandle(t *testing.T) {
 	if running != 0 || poisoned {
 		t.Fatal("pre-launch rejection lost normal cleanup")
 	}
+	assertIdleImageReleased(t, r)
 }
 
 func TestCloseCancelsAndJoinsActiveWorker(t *testing.T) {
@@ -131,7 +132,7 @@ func TestCloseRejectsPreviouslyPreparedWork(t *testing.T) {
 
 func TestRuntimeCeilingAndQuarantine(t *testing.T) {
 	r := fixtureRuntime(t)
-	if r.enter() != nil || r.enter() != nil || r.enter() == nil {
+	if r.enter(context.Background()) != nil || r.enter(context.Background()) != nil || r.enter(context.Background()) == nil {
 		t.Fatal("runtime worker ceiling not enforced")
 	}
 	r.leave()

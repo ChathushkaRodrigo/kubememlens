@@ -1,12 +1,17 @@
 # Optional trace admission prototype
 
-Status: archived R6 candidate; no-go on idle resource cost. Five complete local
-pairs exceeded the 40 MiB node working-set limit. No trace profile is supported,
+Status: development follow-up to the rejected R6 candidate. Five complete local
+pairs of that candidate exceeded the 40 MiB node working-set limit. No trace profile is supported,
 and the local installation/cluster have been removed. See the
 [qualification report](../../docs/ebpf/IDLE_LOCAL_QUALIFICATION.md) and
 [decision](../../docs/adr/0015-reject-current-ebpf-candidate-on-idle-cost.md).
 The source and commands below remain for inspection and reproducibility; they
 do not authorise reinstalling or publishing the rejected incident candidate.
+
+[ADR 0016](../../docs/adr/0016-retain-sealed-worker-only-during-active-traces.md)
+changes the executable lifetime: the sealed worker is reverified on activation,
+shared by active workers and released after their last exit. New resource and
+kernel qualification remain pending; the historical failed runs are unchanged.
 
 This separate module provides `memlens-trace doctor`. It runs bounded,
 non-attaching Linux feature probes for the accepted engine baseline. A supported
