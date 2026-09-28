@@ -8,7 +8,7 @@
     "linuxNodes": 1,
     "containers": 32,
     "containersPerPod": 8,
-    "image": "public.ecr.aws/docker/library/busybox@sha256:9532d8c39891ca2ecde4d30d7710e01fb739c87a8b9299685c63704296b16028"
+    "image": "docker.io/library/busybox@sha256:9532d8c39891ca2ecde4d30d7710e01fb739c87a8b9299685c63704296b16028"
   },
   "measurement": {
     "baselineSeconds": 120,
@@ -28,5 +28,5 @@
     "recoverySeconds": 120
   },
   "requalificationDays": 30,
-  "profileDigest": "sha256:c018bc38b5af3a28b0ba69cce1ed38ad96d3d90b877fe0b865194c75f064315f"
+  "profileDigest": "sha256:ae4f267c022f0ce673be9e0e0252267c82134bab6ae65f5e7c3f60b0726f1bb3"
 }

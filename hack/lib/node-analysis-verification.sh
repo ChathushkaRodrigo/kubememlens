@@ -3,7 +3,8 @@
 # Runs inside the disposable Node-context fixture; all raw data stays private.
 node_analysis_verification() {
   local work_dir=$1 namespace=$2 node=$3
-  local workload_image=public.ecr.aws/docker/library/busybox@sha256:9532d8c39891ca2ecde4d30d7710e01fb739c87a8b9299685c63704296b16028
+  local workload_image=docker.io/library/busybox@sha256:9532d8c39891ca2ecde4d30d7710e01fb739c87a8b9299685c63704296b16028
+  node_context_prefetch_image "${work_dir}" "${node}" "${workload_image}"
   for tenant in node-analysis-a node-analysis-b; do
     kctl create namespace "${tenant}" >/dev/null
     kctl apply -n "${tenant}" -f - >/dev/null <<EOF_WORKLOAD

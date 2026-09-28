@@ -4,10 +4,10 @@
 # The parent owns and validates these private fixture variables.
 # shellcheck disable=SC2154
 node_qualification_baseline() {
-  local profile=${NODE_CONTEXT_QUALIFICATION_PROFILE:?}
+  local profile=${NODE_CONTEXT_QUALIFICATION_PROFILE:?} workload_image
   python3 hack/node-qualification/check_resource_ownership.py --kubeconfig "${kubeconfig}" \
     --context "kind-${cluster}" --output "${artifact_dir}/ownership-check.json"
-  python3 - "${profile}" "${node_image}" "${work_dir}/qualification-start" <<'PY'
+  workload_image=$(python3 - "${profile}" "${node_image}" "${work_dir}/qualification-start" <<'PY'
 import pathlib,sys
 sys.path.insert(0,'hack/node-qualification')
 from common import load,require,utc_text
@@ -15,7 +15,10 @@ from profiles import validate_profile
 p=validate_profile(load(sys.argv[1]))
 require(p['profileClass']=='local-kind' and p['nodeImage']==sys.argv[2], 'profile/fixture mismatch')
 pathlib.Path(sys.argv[3]).write_text(utc_text())
+print(p['workload']['image'])
 PY
+)
+  node_context_prefetch_image "${work_dir}" "${node}" "${workload_image}"
   python3 hack/node-qualification/workload.py --profile "${profile}" --node "${node}" > "${work_dir}/qualification-workload.json"
   kctl apply -f "${work_dir}/qualification-workload.json" >/dev/null
   kctl rollout status deployment/qualification-load -n node-qualification-load --timeout=120s >/dev/null
@@ -24,17 +27,18 @@ PY
 }
 
 node_qualification_measure() {
-  local sampler=hack/node-qualification/sample.py extra=()
+  local sampler=hack/node-qualification/sample.py
+  local sample_args=(--phase "$1" --output "${work_dir}/qualification-$1.json")
   if [ "${NODE_CONTEXT_MEASUREMENT_METHOD:-docker}" = kubernetes ]; then
     sampler=hack/node-qualification/sample_kubernetes_kind.py
-    extra=(--audience "${audience}")
+    sample_args+=(--audience "${audience}")
     if [ "$1" = baseline ]; then
       CGO_ENABLED=0 go build -trimpath -o "${work_dir}/api-bridge" ./hack/node-qualification/api-bridge
     fi
   fi
   python3 "${sampler}" --cluster "${cluster}" --node "${node}" \
     --kubeconfig "${kubeconfig}" --profile "${NODE_CONTEXT_QUALIFICATION_PROFILE}" \
-    --phase "$1" --output "${work_dir}/qualification-$1.json" "${extra[@]}"
+    "${sample_args[@]}"
   python3 - "$1" "${work_dir}/qualification-$1.json" "${artifact_dir}/measurements-$1.json" "${NODE_CONTEXT_QUALIFICATION_PROFILE}" <<'PY'
 import sys
 sys.path.insert(0,'hack/node-qualification')

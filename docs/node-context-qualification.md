@@ -26,6 +26,14 @@ eight per Pod, using the repository's pinned BusyBox image. The workload remains
 present throughout both measurement windows. This is a bounded qualification
 load, not a claim about the maximum supported cluster size.
 
+Local fixtures fetch BusyBox from `docker.io/library/busybox` at the same pinned
+content digest formerly fetched from the ECR Public mirror. The registry change
+has new profile digests; earlier records retain their original identity. Before
+rollout, the owned Node checks its image cache, then permits at most three
+30-second pulls with five seconds between attempts. Failure stops the fixture
+before measurement and reports only a fixed failure category. Registry retries
+do not extend workload readiness or measurement limits.
+
 ## Measurement protocol and budgets
 
 Settle for 30 seconds before each phase. Measure a 120-second baseline with the

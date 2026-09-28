@@ -95,3 +95,20 @@ PY
   fi
   kctl logs -n "${namespace}" "${name}" > "${work_dir}/${name}.log"
 }
+
+# Fetch once before fixture rollout, outside measured windows.
+node_context_prefetch_image() {
+  local work_dir=$1 node=$2 workload_image=$3
+  if docker exec "${node}" timeout 10s crictl inspecti "${workload_image}" > "${work_dir}/fixture-image-inspect.private.log" 2>&1; then
+    return 0
+  fi
+  # Resolve the pinned fixture before rollout; registry retries must not consume
+  # the workload readiness window or run during resource measurements.
+  source hack/lib/retry.sh
+  if ! retry_to_file 3 5 "${work_dir}/qualification-image-pull.log" \
+    docker exec "${node}" timeout 30s crictl pull "${workload_image}" 2> "${work_dir}/qualification-image-pull.private.log"; then
+    echo 'pinned qualification fixture image could not be fetched within the bounded preflight' >&2
+    python3 hack/node-qualification/image_pull_failure.py "${work_dir}/qualification-image-pull.private.log" >&2
+    return 1
+  fi
+}
