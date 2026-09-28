@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/danushkastanley/kube-memlens/internal/api"
+	"github.com/danushkastanley/kube-memlens/internal/changemarkers"
 	"github.com/danushkastanley/kube-memlens/internal/memoryhistory"
 	"github.com/danushkastanley/kube-memlens/internal/volumehealth"
 	"golang.org/x/time/rate"
@@ -21,11 +22,23 @@ type memoryHistoryResolver struct {
 	nodeIdentity VolumeNodeIdentity
 	calls        *rate.Limiter
 	gate         chan struct{}
+	subresources []string
+	workload     func(*volumeBindingQuery, context.Context, *memoryhistory.Selection, VolumeNodeIdentity) error
 }
 
 // NewMemoryHistoryResolver shares bounded object and owner-chain parsing with
 // volume reads, but never requests a PVC, PV, CSI or other volume resource.
 func NewMemoryHistoryResolver(config *rest.Config, authorize ObjectAuthorizer, nodeIdentity VolumeNodeIdentity) (memoryhistory.Resolver, error) {
+	return newMemoryHistoryResolver(config, authorize, nodeIdentity, []string{"trends"}, (*volumeBindingQuery).historyWorkload)
+}
+
+// Context reads require both the new named permission and the existing history
+// permission, before any source acquisition and again before disclosure.
+func NewMemoryHistoryContextResolver(config *rest.Config, authorize ObjectAuthorizer, nodeIdentity VolumeNodeIdentity) (memoryhistory.Resolver, error) {
+	return newMemoryHistoryResolver(config, authorize, nodeIdentity, []string{"trends-context", "trends"}, (*volumeBindingQuery).historyContextWorkload)
+}
+
+func newMemoryHistoryResolver(config *rest.Config, authorize ObjectAuthorizer, nodeIdentity VolumeNodeIdentity, subresources []string, workload func(*volumeBindingQuery, context.Context, *memoryhistory.Selection, VolumeNodeIdentity) error) (memoryhistory.Resolver, error) {
 	if config == nil || config.Insecure || !strings.HasPrefix(config.Host, "https://") || authorize == nil || nodeIdentity == nil {
 		return nil, memoryhistory.ErrInvalid
 	}
@@ -33,7 +46,7 @@ func NewMemoryHistoryResolver(config *rest.Config, authorize ObjectAuthorizer, n
 	if err != nil {
 		return nil, memoryhistory.ErrUnavailable
 	}
-	return &memoryHistoryResolver{reader: reader, authorize: authorize, nodeIdentity: nodeIdentity, calls: rate.NewLimiter(20, 40), gate: make(chan struct{}, 1)}, nil
+	return &memoryHistoryResolver{reader: reader, authorize: authorize, nodeIdentity: nodeIdentity, calls: rate.NewLimiter(20, 40), gate: make(chan struct{}, 1), subresources: subresources, workload: workload}, nil
 }
 
 func (r *memoryHistoryResolver) Resolve(ctx context.Context, request memoryhistory.Request) (memoryhistory.Selection, error) {
@@ -64,8 +77,10 @@ func (r *memoryHistoryResolver) Resolve(ctx context.Context, request memoryhisto
 	}
 	// Resolve runs before acquisition and again before disclosure. Recheck the
 	// named history permission even when the caller keeps ordinary object reads.
-	if err := q.authorize(ctx, ObjectAccess{Group: api.MemoryAPIGroup, Resource: resource, Subresource: "trends", Namespace: request.Namespace, Name: request.Name}); err != nil {
-		return memoryhistory.Selection{}, historyReadError(err)
+	for _, subresource := range r.subresources {
+		if err := q.authorize(ctx, ObjectAccess{Group: api.MemoryAPIGroup, Resource: resource, Subresource: subresource, Namespace: request.Namespace, Name: request.Name}); err != nil {
+			return memoryhistory.Selection{}, historyReadError(err)
+		}
 	}
 	s := memoryhistory.Selection{Request: request, ResolvedAt: time.Now().UTC()}
 	var err error
@@ -80,7 +95,7 @@ func (r *memoryHistoryResolver) Resolve(ctx context.Context, request memoryhisto
 			err = q.historyTargets(ctx, &s, pod, r.nodeIdentity)
 		}
 	case memoryhistory.Workload:
-		err = q.historyWorkload(ctx, &s, r.nodeIdentity)
+		err = r.workload(&q, ctx, &s, r.nodeIdentity)
 	}
 	if err != nil {
 		return memoryhistory.Selection{}, historyReadError(err)
@@ -105,7 +120,7 @@ func historyReadError(err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
-	for _, known := range []error{memoryhistory.ErrInvalid, memoryhistory.ErrBounds, memoryhistory.ErrDenied, memoryhistory.ErrChanged, memoryhistory.ErrNotFound, memoryhistory.ErrUnavailable} {
+	for _, known := range []error{memoryhistory.ErrInvalid, memoryhistory.ErrBounds, memoryhistory.ErrDenied, memoryhistory.ErrChanged, memoryhistory.ErrNotFound, memoryhistory.ErrUnavailable, changemarkers.ErrUnsupported} {
 		if errors.Is(err, known) {
 			return known
 		}

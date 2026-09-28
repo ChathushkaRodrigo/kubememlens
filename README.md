@@ -232,6 +232,8 @@ press `H` in the TUI to choose remote working set/RSS or explicit local history.
 The feature is disabled by default and has passed local installation, reader
 isolation and rollback checks. It does not change existing history retention or
 install Prometheus; managed-provider qualification remains separate.
+Opt-in [workload change markers](docs/memory-change-markers.md) add bounded
+rollout, restart and resize context, with redacted capture and offline comparison.
 
 Development builds include an optional [volume context profile](docs/volume-context.md) showing filesystem
 usage, CSI health and tmpfs configuration beside memory evidence. Use

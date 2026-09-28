@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/danushkastanley/kube-memlens/internal/memoryhistory"
@@ -26,17 +24,7 @@ func (c *KubernetesAPIClient) MemoryHistory(ctx context.Context, request memoryh
 	if err := query.Validate(time.Now().UTC()); err != nil {
 		return memoryhistory.Report{}, err
 	}
-	values := url.Values{"source": {string(query.Source)}, "metric": {string(query.Metric)}, "start": {query.Start.UTC().Format(time.RFC3339)}, "end": {query.End.UTC().Format(time.RFC3339)}, "step": {strconv.FormatInt(int64(query.Step/time.Second), 10)}}
-	path := "/namespaces/" + url.PathEscape(request.Namespace) + "/pods/" + url.PathEscape(request.Name) + "/trends"
-	switch request.Scope {
-	case memoryhistory.Container:
-		values.Set("container", request.Container)
-	case memoryhistory.Workload:
-		path = "/namespaces/" + url.PathEscape(request.Namespace) + "/workloads/" + url.PathEscape(request.Name) + "/trends"
-		values.Set("kind", request.WorkloadKind)
-	case memoryhistory.Node:
-		path = "/nodes/" + url.PathEscape(request.Name) + "/trends"
-	}
+	path := memoryHistoryPath(request, query, "trends")
 	var resource struct {
 		metav1.TypeMeta   `json:",inline"`
 		metav1.ObjectMeta `json:"metadata"`
@@ -47,7 +35,7 @@ func (c *KubernetesAPIClient) MemoryHistory(ctx context.Context, request memoryh
 	// an earlier caller cancellation or deadline still takes precedence.
 	historyClient := *c
 	historyClient.httpClient = &http.Client{Transport: c.httpClient.Transport, CheckRedirect: c.httpClient.CheckRedirect, Jar: c.httpClient.Jar, Timeout: 10 * time.Second}
-	if err := historyClient.getBounded(ctx, "read memory history", path+"?"+values.Encode(), &resource, memoryhistory.MaxResponseBytes); err != nil {
+	if err := historyClient.getBounded(ctx, "read memory history", path, &resource, memoryhistory.MaxResponseBytes); err != nil {
 		return memoryhistory.Report{}, err
 	}
 	r := resource.History

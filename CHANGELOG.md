@@ -4,6 +4,12 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 
 ## Unreleased
 
+### Workload change markers
+
+- Add opt-in Pod, container and workload history context with exact instance/owner identity, bounded structured events, source timestamps and explicit retention and clock caveats.
+- Add CLI/TUI marker selection and schema-6 capture, replay and comparison. Default captures use local aliases; comparisons never infer identity continuity across alias sets or splice memory across Pod UIDs.
+- Keep existing history responses and viewer roles unchanged. Optional namespace event/owner roles, named context permissions and disclosure-time rechecks govern the additional reads.
+
 ### Optional memory trends
 
 - Add named Pod, container, workload and Node history reads from a fixed, verified-TLS Prometheus source, with immutable instance labels, bounded queries and explicit source, freshness and gap semantics.

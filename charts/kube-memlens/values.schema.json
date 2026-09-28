@@ -15,6 +15,7 @@
           "items": {"type": "string", "maxLength": 63, "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"}},
         "nodes": {"type": "boolean"},
         "workloads": {"type": "boolean"},
+        "markers": {"type": "boolean"},
         "credentialsSecret": {"type": "string", "maxLength": 253, "pattern": "^$|^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$"},
         "caKey": {"type": "string", "maxLength": 253, "pattern": "^[-._a-zA-Z0-9]*$"},
         "tokenKey": {"type": "string", "maxLength": 253, "pattern": "^[-._a-zA-Z0-9]*$"}

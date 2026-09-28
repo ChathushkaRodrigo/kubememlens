@@ -67,7 +67,7 @@ func (h *ReadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set(api.SnapshotSchemaHeader, strconv.Itoa(schema))
-	if info.Subresource == "trends" {
+	if info.Subresource == "trends" || info.Subresource == "trends-context" {
 		h.serveMemoryHistory(w, r, info)
 		return
 	}

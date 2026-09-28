@@ -8,6 +8,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/danushkastanley/kube-memlens/internal/changemarkers"
 	"github.com/danushkastanley/kube-memlens/internal/memoryhistory"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,6 +17,8 @@ import (
 
 type memoryHistoryService struct {
 	resolver         memoryhistory.Resolver
+	contextResolver  memoryhistory.Resolver
+	markers          changemarkers.Provider
 	local, remote    memoryhistory.Provider
 	namespaces       map[string]bool
 	nodes, workloads bool
@@ -33,6 +36,11 @@ func (h *ReadHandler) serveMemoryHistory(w http.ResponseWriter, r *http.Request,
 	s := h.memoryHistory
 	if s == nil || info.Verb != "get" || info.Name == "" || len(info.Parts) != 3 {
 		writeReadError(w, http.StatusNotFound, metav1.StatusReasonNotFound, "memory history is not configured for this resource")
+		return
+	}
+	withChanges := info.Subresource == "trends-context"
+	if withChanges && (s.markers == nil || s.contextResolver == nil || info.Resource == "nodes") {
+		writeMemoryHistoryError(w, memoryhistory.ErrNotFound)
 		return
 	}
 	if len(r.URL.RawQuery) > 4096 {
@@ -87,9 +95,13 @@ func (h *ReadHandler) serveMemoryHistory(w http.ResponseWriter, r *http.Request,
 		writeReadError(w, http.StatusTooManyRequests, metav1.StatusReasonTooManyRequests, "a memory history query is already in progress")
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 9*time.Second)
+	resolver, timeout := s.resolver, 9*time.Second
+	if withChanges {
+		resolver, timeout = s.contextResolver, 12*time.Second
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
-	selected, err := s.resolver.Resolve(ctx, request)
+	selected, err := resolver.Resolve(ctx, request)
 	if err != nil {
 		writeMemoryHistoryError(w, err)
 		return
@@ -107,7 +119,15 @@ func (h *ReadHandler) serveMemoryHistory(w http.ResponseWriter, r *http.Request,
 		writeMemoryHistoryError(w, err)
 		return
 	}
-	current, err := s.resolver.Resolve(ctx, request)
+	var changes changemarkers.Report
+	if withChanges {
+		changes, err = s.markers.Query(ctx, selected, query)
+		if err != nil {
+			writeMemoryHistoryError(w, err)
+			return
+		}
+	}
+	current, err := resolver.Resolve(ctx, request)
 	if err != nil {
 		writeMemoryHistoryError(w, err)
 		return
@@ -116,8 +136,18 @@ func (h *ReadHandler) serveMemoryHistory(w http.ResponseWriter, r *http.Request,
 		writeMemoryHistoryError(w, memoryhistory.ErrChanged)
 		return
 	}
+	if withChanges {
+		if err := s.markers.Revalidate(ctx, changes); err != nil {
+			writeMemoryHistoryError(w, err)
+			return
+		}
+	}
 	if ctx.Err() != nil {
 		writeMemoryHistoryError(w, ctx.Err())
+		return
+	}
+	if withChanges {
+		h.writeHistoryContext(w, report, changes)
 		return
 	}
 	writeBoundedReadJSON(w, memoryHistoryResource{TypeMeta: metav1.TypeMeta{APIVersion: readAPIVersion, Kind: "MemoryHistory"}, ObjectMeta: metav1.ObjectMeta{Namespace: request.Namespace, Name: request.Name, UID: types.UID(selected.UID)}, History: report}, min(h.opts.MaxResponseBytes, memoryhistory.MaxResponseBytes))
@@ -125,6 +155,8 @@ func (h *ReadHandler) serveMemoryHistory(w http.ResponseWriter, r *http.Request,
 
 func writeMemoryHistoryError(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, changemarkers.ErrUnsupported):
+		writeReadError(w, http.StatusUnprocessableEntity, metav1.StatusReasonInvalid, "workload change context does not support this controller type or version; plain history remains available")
 	case errors.Is(err, memoryhistory.ErrDenied):
 		writeReadError(w, http.StatusForbidden, metav1.StatusReasonForbidden, "memory history access is denied")
 	case errors.Is(err, memoryhistory.ErrNotFound):

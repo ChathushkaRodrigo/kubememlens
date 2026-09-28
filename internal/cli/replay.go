@@ -46,6 +46,9 @@ func newReplayCommand() *cobra.Command {
 				}
 				return incident.Write(cmd.OutOrStdout(), exportOutput, force, legacy)
 			}
+			if document.History != nil {
+				return replayHistory(cmd.OutOrStdout(), *document.History, podRef, nodeRef)
+			}
 			if document.Volume != nil {
 				if nodeRef != "" {
 					return fmt.Errorf("volume incidents contain Pod evidence")
