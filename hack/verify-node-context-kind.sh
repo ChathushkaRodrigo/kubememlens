@@ -73,12 +73,14 @@ kubeconfig=${work_dir}/kubeconfig
 created=false
 image_created=false
 volume_image_created=false
+completed=false
 image="kube-memlens-node-context:$(basename "${work_dir}")"
 if docker image inspect "${image}" >/dev/null 2>&1; then echo 'refusing to replace an existing image' >&2; exit 1; fi
 kctl() { kubectl --kubeconfig "${kubeconfig}" --context "kind-${cluster}" "$@"; }
 cleanup() {
   local result=$?
   trap - EXIT
+  if [ "${completed}" != true ]; then result=1; fi
   if [ "${result}" -ne 0 ] && [ "${created}" = true ]; then
     source hack/lib/node-readiness-diagnostic.sh
     if ! node_context_readiness_failure; then echo 'bounded readiness diagnostic unavailable' >&2; fi
@@ -139,7 +141,7 @@ fi
 image_created=true
 docker build -t "${image}" "${work_dir}/image" > "${work_dir}/image-build.log" 2>&1
 docker image inspect "${image}" --format '{{.Id}}' > "${work_dir}/image-id"
-kind_args=()
+kind_args=(--wait 90s)
 if [ "${NODE_CONTEXT_VERIFY_VOLUME_STATS:-false}" = true ]; then
   [ "${NODE_CONTEXT_VERIFY_INGESTION:-false}" = true ] || { echo 'volume verification requires ingestion' >&2; exit 1; }
   cat > "${work_dir}/kind.yaml" <<'YAML'
@@ -160,7 +162,7 @@ YAML
   kind_args+=(--config "${work_dir}/kind.yaml")
 fi
 created=true
-kind create cluster --name "${cluster}" --image "${node_image}" --kubeconfig "${kubeconfig}" "${kind_args[@]}" --wait 90s > "${work_dir}/kind-create.log" 2>&1
+kind create cluster --name "${cluster}" --image "${node_image}" --kubeconfig "${kubeconfig}" "${kind_args[@]}" > "${work_dir}/kind-create.log" 2>&1
 kind load docker-image "${image}" --name "${cluster}" > "${work_dir}/image-load.log" 2>&1
 node=$(kind get nodes --name "${cluster}")
 kctl get node "${node}" -o json > "${work_dir}/node.json"
@@ -298,4 +300,5 @@ fi
 if [ -n "${VOLUME_QUALIFICATION_PROFILE:-}" ]; then
   python3 hack/volume-qualification/record.py --profile "${VOLUME_QUALIFICATION_PROFILE}" --output-dir "${artifact_dir}" --finalise
 fi
+completed=true
 echo 'PASS direct kubelet TLS, Pod-bound token audience, stats-only RBAC, denial, bad CA, bounded normalisation and cleanup'
