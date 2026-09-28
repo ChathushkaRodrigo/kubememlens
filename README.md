@@ -226,6 +226,13 @@ go run ./cmd/kubectl-memlens compare --before before.json --after after.json --w
 
 Restricted mode also supports [private capture, offline replay and working-set comparison](docs/restricted-incidents.md), with schema 3 and explicit partial-evidence caveats.
 
+Development builds include optional [memory trends](docs/memory-history.md) from
+an operator-owned, identity-enriched Prometheus service. Use `history trends` or
+press `H` in the TUI to choose remote working set/RSS or explicit local history.
+The feature is disabled by default and has passed local installation, reader
+isolation and rollback checks. It does not change existing history retention or
+install Prometheus; managed-provider qualification remains separate.
+
 Development builds include an optional [volume context profile](docs/volume-context.md) showing filesystem
 usage, CSI health and tmpfs configuration beside memory evidence. Use
 `kubectl memlens volumes pod <name> -n <namespace>` or press `v` in a Pod/workload

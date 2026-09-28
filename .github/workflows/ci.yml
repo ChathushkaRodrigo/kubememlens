@@ -197,6 +197,9 @@ jobs:
       - name: Fuzz snapshot decoding
         run: go test ./internal/collector -run='^$' -fuzz='^FuzzDecodeSnapshot$' -fuzztime=10s -fuzzminimizetime=5s -parallel=2 -timeout=2m
 
+      - name: Fuzz bounded memory history decoding
+        run: go test ./internal/memoryhistory -run='^$' -fuzz='^FuzzReportDecode$' -fuzztime=10s -fuzzminimizetime=5s -parallel=2 -timeout=2m
+
       - name: Fuzz resource-metrics quantities
         run: go test ./internal/resourcemetrics -run='^$' -fuzz='^FuzzUsageValue$' -fuzztime=10s -fuzzminimizetime=5s -parallel=2 -timeout=2m
 
@@ -271,6 +274,20 @@ jobs:
           -w /work
           alpine/helm:3.18.4@sha256:e7ecbf4a200dea73d64bfb8cb0936829164945f2b4d02a0274093073ee8d264f
           lint --strict charts/kube-memlens
+
+      - name: Set up Go for chart contract checks
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Check optional memory history boundaries
+        run: |
+          helm() {
+            docker run --rm -v "$PWD:/work:ro" -w /work \
+              alpine/helm:3.18.4@sha256:e7ecbf4a200dea73d64bfb8cb0936829164945f2b4d02a0274093073ee8d264f "$@"
+          }
+          export -f helm
+          hack/test-memory-history-contract.sh
 
       - name: Reject values outside the chart schema
         run: |

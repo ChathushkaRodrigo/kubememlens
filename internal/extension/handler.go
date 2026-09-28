@@ -33,6 +33,7 @@ const (
 )
 
 type HandlerOptions struct {
+	MemoryHistory          *MemoryHistoryOptions
 	NodeAccounting         map[string]nodeanalysis.Qualification
 	AgentUsername          string
 	NodeContextUsername    string
@@ -64,6 +65,9 @@ type identityLimiter struct {
 }
 
 func NewHandler(coordinator *Coordinator, opts HandlerOptions) (*Handler, error) {
+	if err := opts.MemoryHistory.Validate(); err != nil {
+		return nil, err
+	}
 	if coordinator == nil {
 		return nil, fmt.Errorf("ingestion coordinator is required")
 	}

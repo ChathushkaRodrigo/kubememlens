@@ -36,6 +36,19 @@ volumeContext:
   health: false
   namespaces: []
 
+# Optional history query adapter. The operator owns the remote service and its
+# immutable identity labels. Credentials come only from an existing Secret.
+memoryHistory:
+  enabled: false
+  url: ""
+  cluster: ""
+  namespaces: []
+  nodes: false
+  workloads: false
+  credentialsSecret: ""
+  caKey: ""
+  tokenKey: ""
+
 agent:
   enabled: true
   nodeSelector:
