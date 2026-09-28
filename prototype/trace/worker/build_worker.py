@@ -35,7 +35,7 @@ def verify_sdk():
 
 def inputs():
     files = [ROOT / name for name in ("go.mod", "go.sum", "LICENSE", "NOTICE")]
-    files += [WORKER / "build_worker.py", WORKER / "prepare_sdk.py"]
+    files += [WORKER / name for name in ("build_worker.py", "prepare_sdk.py", "sdk_download.py")]
     for directory in (ROOT / "internal", ROOT / "prototype/trace"):
         for p in directory.rglob("*"):
             if not p.is_file() or ".sdk" in p.parts:
