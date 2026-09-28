@@ -4,6 +4,10 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 
 ## Unreleased
 
+### Optional admission idle cost
+
+- Suspend expiry timers while the optional API and node service hold no state. Resume the existing 100 ms cadence for reservations, leases and replay records, including failed-cleanup retries. Resource qualification remains pending.
+
 ### Optional worker startup
 
 - Remove unused socket-probe initialisation from the constrained SDK and strip worker debug sections from reproducible builds. Bind the updated SDK patch into signed acceptance and retain executable sealing and attachment/cleanup checks. Fresh kernel and resource qualification remains required.

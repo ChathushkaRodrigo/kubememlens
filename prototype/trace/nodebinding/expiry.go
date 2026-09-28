@@ -23,10 +23,26 @@ func (s *Service) prune(now time.Time) {
 func (s *Service) expire(ctx context.Context) {
 	defer close(s.done)
 	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker.Stop()
 	defer ticker.Stop()
+	var ticks <-chan time.Time
 	for {
+		s.mu.Lock()
+		hasWork := len(s.leases) > 0 || len(s.seen) > 0
+		s.mu.Unlock()
+		// Keep the existing expiry cadence while state is retained, but do not
+		// wake an empty service. Buffered notifications cover concurrent inserts.
+		if hasWork && ticks == nil {
+			ticker.Reset(100 * time.Millisecond)
+			ticks = ticker.C
+		}
+		if !hasWork && ticks != nil {
+			ticker.Stop()
+			ticks = nil
+		}
 		select {
-		case <-ticker.C:
+		case <-s.wake:
+		case <-ticks:
 			s.mu.Lock()
 			s.prune(time.Now())
 			s.mu.Unlock()

@@ -129,9 +129,25 @@ func (m *Manager) sweep(shutdown bool) error {
 func (m *Manager) expiryLoop() {
 	defer close(m.done)
 	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker.Stop()
 	defer ticker.Stop()
+	var ticks <-chan time.Time
 	for {
+		m.mu.Lock()
+		hasWork := len(m.entries) > 0
+		m.mu.Unlock()
+		// Keep the existing expiry cadence while state is retained, but do not
+		// wake an empty service. Buffered notifications cover concurrent inserts.
+		if hasWork && ticks == nil {
+			ticker.Reset(100 * time.Millisecond)
+			ticks = ticker.C
+		}
+		if !hasWork && ticks != nil {
+			ticker.Stop()
+			ticks = nil
+		}
 		select {
+		case <-m.wake:
 		case <-m.ctx.Done():
 			m.mu.Lock()
 			m.closed = true
@@ -147,7 +163,7 @@ func (m *Manager) expiryLoop() {
 			}
 			m.mu.Unlock()
 			return
-		case <-ticker.C:
+		case <-ticks:
 			_ = m.sweep(false)
 		}
 	}
