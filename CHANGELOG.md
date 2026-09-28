@@ -10,6 +10,10 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 - Add CLI and TUI source selection with cancellation and explicit local fallback. Provider waits use a separate read gate; existing local history and incident formats remain unchanged.
 - Keep the chart profile disabled by default, with separate acquisition and unbound viewer roles. Verify local installation, reader isolation, revocation, bounded queries, terminal source switching and rollback. Managed-provider qualification remains separate.
 
+### Optional dependency notices
+
+- Retain notices from compiled package directories and their module ancestors, including vendored forks. Keep their relative paths, exclude Go source files from the notice inventory and reject package directories outside their module.
+
 ### Optional admission idle cost
 
 - Suspend expiry timers while the optional API and node service hold no state. Resume the existing 100 ms cadence for reservations, leases and replay records, including failed-cleanup retries. Resource qualification remains pending.
