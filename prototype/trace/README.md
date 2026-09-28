@@ -53,8 +53,11 @@ reviewed capabilities, seccomp policy and resource limits.
 
 The scratch image contains Go and the licence/notice files of every Go module
 imported by the optional binary. The build derives `/licences/inventory.json` from
-`go list -deps` and fails if a module has no licence file. Kubernetes adapters use
-the same pinned versions as the main module; upstream gadget references remain
+`go list -deps` and retains notices beside each compiled package and its ancestors,
+preserving module-relative paths for vendored forks. It rejects packages outside
+their module, ignores notice symlinks and fails if a module has no licence file.
+This inventory is packaging evidence, not a redistribution approval. Kubernetes
+adapters use the same pinned versions as the main module; upstream gadget references remain
 evaluation inputs.
 The embedded fixed probe instruction sequences are authored in this module;
 there is no upstream gadget bytecode embedded in the binary.
