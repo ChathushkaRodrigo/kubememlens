@@ -60,7 +60,7 @@ class WorkloadPrefetchTests(unittest.TestCase):
         result, events = self.exercise(0)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(len([e for e in events if e.startswith('pull ')]), 1)
-        self.assertIn('timeout 30s crictl pull public.ecr.aws/docker/library/busybox@sha256:', events[1])
+        self.assertIn('timeout 30s crictl pull docker.io/library/busybox@sha256:', events[1])
         self.assertTrue(events[2].startswith('kctl apply '))
         self.assertEqual(events[-1], 'measure baseline')
 
