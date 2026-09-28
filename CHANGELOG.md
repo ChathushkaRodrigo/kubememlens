@@ -4,6 +4,10 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 
 ## Unreleased
 
+### Optional dependency notices
+
+- Retain notices from compiled package directories and their module ancestors, including vendored forks. Keep their relative paths, exclude Go source files from the notice inventory and reject package directories outside their module.
+
 ### Optional admission idle cost
 
 - Suspend expiry timers while the optional API and node service hold no state. Resume the existing 100 ms cadence for reservations, leases and replay records, including failed-cleanup retries. Resource qualification remains pending.
