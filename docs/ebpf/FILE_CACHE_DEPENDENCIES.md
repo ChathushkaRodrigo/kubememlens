@@ -128,3 +128,29 @@ maintainer owns follow-up before any future candidate is qualified. Reconcile
 scanner coverage, review linked-code applicability and update/requalify affected
 dependencies and runtime versions before another positive decision. The archived
 candidate and recorded measurements remain unchanged.
+
+## Development dependency update — 28 September 2026
+
+The development source now selects containerd v1.7.36 in the optional worker and
+OpenTelemetry v1.45.0 across the root, launcher and worker module graphs. These
+versions are in the patched ranges for the containerd
+[ExecSync](https://github.com/containerd/containerd/security/advisories/GHSA-7jxh-36q5-gcqv)
+and [image-pull exhaustion](https://github.com/containerd/containerd/security/advisories/GHSA-pg57-6jwg-q645)
+advisories and OpenTelemetry's
+[exporter configuration logging](https://github.com/open-telemetry/opentelemetry-go/security/advisories/GHSA-8wmf-6v46-5gfg)
+advisory. Required transitive updates include logr v1.4.4, OTLP protobuf v1.11.0
+and the genproto API/RPC versions required by the updated exporter.
+
+Fresh Linux/arm64 source scans used Go 1.27.1, govulncheck v1.7.0 and the database
+updated through 24 September 2026 20:07:49 UTC. Root and launcher still report
+GO-2026-5932, GO-2026-6094 and GO-2026-6107 without called-symbol findings. The
+worker still reports GO-2026-5064, GO-2026-5338 and GO-2026-5622 with symbol traces,
+plus module-only GO-2026-5932. These findings and the earlier advisory-mapping
+discrepancy remain recorded; this update does not waive them or claim a clean scan.
+
+All three modules passed native Linux race tests, vet and Linux arm64/amd64
+builds. The standard agent's 625-package dependency closure still excludes the
+optional tracer, SDK and BPF library. The prepared SDK source and its policy patch
+are unchanged. These are source-level dependency corrections, not a cluster
+runtime upgrade or a revision of the previously measured image. Rebuild and
+requalify the new worker before accepting another trace candidate.

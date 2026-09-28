@@ -4,6 +4,11 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 
 ## Unreleased
 
+### Dependency security
+
+- Update OpenTelemetry to v1.45.0 for the exporter-configuration logging advisory, with its required transitive dependencies.
+- Update the optional worker's containerd library to v1.7.36 for the ExecSync and image-pull exhaustion advisories. This does not update a cluster's container runtime; other recorded scanner findings remain unresolved.
+
 ### Local CSI qualification
 
 - Add a frozen local volume qualification profile with measured Go heap, retention, CPU, API activity, source/delivery and operator latency.
