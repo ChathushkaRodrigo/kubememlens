@@ -21,6 +21,12 @@ def category(value, choices):
     return value if isinstance(value, str) and value in choices else "other"
 
 
+def reason_counts(counts):
+    # Reasons are bounded enum values, never evidence field names. In
+    # particular, Kubernetes' "Error" must not become a raw-error field.
+    return [{"reason": reason, "count": counts[reason]} for reason in sorted(counts)]
+
+
 def object_fields(pairs):
     value = {}
     for key, item in pairs:
@@ -84,8 +90,8 @@ def summarise(document, api_service=None):
     result = {"schemaVersion": 1, "scope": "local-readiness-diagnostic", "qualified": False,
               "podCount": len(pods), "containerStatuses": total,
               "readyContainers": ready, "missingContainerStatusPods": missing,
-              "phases": dict(phases), "podReasons": dict(reasons),
-              "waitingReasons": dict(waiting), "terminatedReasons": dict(terminated),
+              "phases": dict(phases), "podReasons": reason_counts(reasons),
+              "waitingReasons": reason_counts(waiting), "terminatedReasons": reason_counts(terminated),
               "apiServiceAvailability": api_availability(api_service)}
     privacy(result)
     return result

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 from common import ContractError, MAX_BYTES
-from readiness_failure import read_input, summarise
+from readiness_failure import REASONS, read_input, summarise
 
 
 class ReadinessFailureTests(unittest.TestCase):
@@ -19,8 +19,8 @@ class ReadinessFailureTests(unittest.TestCase):
                 {"ready": False, "state": {"terminated": {"reason": "OOMKilled", "message": "private-path"}}}]}}
         ]}
         result = summarise(document)
-        self.assertEqual(result["waitingReasons"], {"ImagePullBackOff": 1})
-        self.assertEqual(result["terminatedReasons"], {"OOMKilled": 1})
+        self.assertEqual(result["waitingReasons"], [{"reason": "ImagePullBackOff", "count": 1}])
+        self.assertEqual(result["terminatedReasons"], [{"reason": "OOMKilled", "count": 1}])
         self.assertEqual(result["readyContainers"], 1)
         self.assertEqual(result["containerStatuses"], 3)
         self.assertFalse(result["qualified"])
@@ -35,7 +35,17 @@ class ReadinessFailureTests(unittest.TestCase):
     def test_unknown_container_reason_is_not_copied(self):
         result = summarise({"items": [{"status": {"containerStatuses": [
             {"state": {"waiting": {"reason": "secret endpoint"}}}]}}]})
-        self.assertEqual(result["waitingReasons"], {"other": 1})
+        self.assertEqual(result["waitingReasons"], [{"reason": "other", "count": 1}])
+
+    def test_expected_denial_reasons_do_not_become_forbidden_keys(self):
+        for reason in REASONS:
+            with self.subTest(reason=reason):
+                result = summarise({"items": [{"status": {"phase": "Failed", "reason": reason,
+                    "containerStatuses": [{"ready": False, "state": {"terminated": {
+                        "reason": reason, "message": "private-failure-details"}}}]}}]})
+                self.assertEqual(result["terminatedReasons"], [{"reason": reason, "count": 1}])
+                self.assertEqual(result["podReasons"], [{"reason": reason, "count": 1}])
+                self.assertNotIn("private", json.dumps(result))
 
     def test_api_availability_retains_only_known_reason(self):
         api = {"metadata": {"name": "private-service"}, "status": {"conditions": [
