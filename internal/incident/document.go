@@ -29,6 +29,7 @@ type Document struct {
 	Restricted *RestrictedBundle
 	Node       *NodeBundle
 	Volume     *VolumeBundle
+	History    *HistoryBundle
 }
 
 func Read(path string) (Document, error) {
@@ -49,6 +50,13 @@ func Read(path string) (Document, error) {
 	}
 	if err := json.Unmarshal(data, &header); err != nil {
 		return Document{}, fmt.Errorf("decode incident bundle: %w", err)
+	}
+	if header.SchemaVersion == HistorySchemaVersion {
+		bundle, err := decodeHistory(data)
+		if err != nil {
+			return Document{}, err
+		}
+		return Document{History: &bundle}, nil
 	}
 	if header.SchemaVersion == VolumeSchemaVersion {
 		bundle, err := decodeVolume(data)

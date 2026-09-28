@@ -2,8 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -25,6 +23,7 @@ func newHistoryTrendsCommand(options collectorOptionsProvider) *cobra.Command {
 func newTrendScopeCommand(options collectorOptionsProvider, scope memoryhistory.Scope) *cobra.Command {
 	var namespace, source, metric, output string
 	var window, step time.Duration
+	var markers bool
 	target := "<name>"
 	if scope == memoryhistory.Container {
 		target = "<pod>/<container>"
@@ -40,21 +39,7 @@ func newTrendScopeCommand(options collectorOptionsProvider, scope memoryhistory.
 		if err := validateNodeOutput(output); err != nil {
 			return err
 		}
-		if window < 0 || window > memoryhistory.MaxRange || window%time.Second != 0 || step < 0 || step > time.Hour || step%time.Second != 0 {
-			return fmt.Errorf("window must be at most 168h and step must use whole seconds up to 1h")
-		}
-		values := url.Values{"source": {source}}
-		if metric != "" {
-			values.Set("metric", metric)
-		}
-		now := time.Now().UTC().Truncate(time.Second)
-		if window > 0 {
-			values.Set("start", now.Add(-window).Format(time.RFC3339))
-		}
-		if step > 0 {
-			values.Set("step", strconv.FormatInt(int64(step/time.Second), 10))
-		}
-		query, err := memoryhistory.ParseQuery(values, scope, now)
+		query, err := parseTrendWindow(source, metric, window, step, scope)
 		if err != nil {
 			return err
 		}
@@ -73,6 +58,21 @@ func newTrendScopeCommand(options collectorOptionsProvider, scope memoryhistory.
 		if !ok {
 			return fmt.Errorf("memory trends require the authenticated history API")
 		}
+		if markers {
+			contextReader, ok := reader.(client.MemoryHistoryContextReader)
+			if !ok || scope == memoryhistory.Node {
+				return fmt.Errorf("workload change markers require a Pod, container or workload context reader")
+			}
+			result, err := contextReader.MemoryHistoryContext(cmd.Context(), request, query)
+			if err != nil {
+				return err
+			}
+			if output != "text" {
+				return writeNodeDocument(cmd.OutOrStdout(), output, result)
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), strings.Join(historyview.ContextLines(result, time.Now().UTC(), 100), "\n"))
+			return err
+		}
 		r, err := history.MemoryHistory(cmd.Context(), request, query)
 		if err != nil {
 			return err
@@ -85,6 +85,9 @@ func newTrendScopeCommand(options collectorOptionsProvider, scope memoryhistory.
 	}}
 	if scope != memoryhistory.Node {
 		cmd.Flags().StringVarP(&namespace, "namespace", "n", "default", "Kubernetes namespace")
+	}
+	if scope != memoryhistory.Node {
+		cmd.Flags().BoolVar(&markers, "markers", false, "include authorised workload change markers and event-history caveats")
 	}
 	cmd.Flags().StringVar(&source, "source", "local", "history source: local or prometheus; no automatic fallback")
 	cmd.Flags().StringVar(&metric, "metric", "", "metric: cgroup-charge, working-set, or rss (source-appropriate default)")

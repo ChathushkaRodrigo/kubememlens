@@ -7,12 +7,22 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/danushkastanley/kube-memlens/internal/changemarkers"
 	"github.com/danushkastanley/kube-memlens/internal/client"
 	"github.com/danushkastanley/kube-memlens/internal/kube"
 	"github.com/danushkastanley/kube-memlens/internal/memoryhistory"
 )
 
+type historyContextMode string
+
+const (
+	plainHistory  historyContextMode = ""
+	markedHistory historyContextMode = "markers"
+)
+
 type historyPanel struct {
+	mode                historyContextMode
+	markers             *changemarkers.Report
 	open                bool
 	request             memoryhistory.Request
 	expectedPodUID      string
@@ -27,6 +37,7 @@ type historyPanel struct {
 }
 
 type historyPanelMsg struct {
+	markers    *changemarkers.Report
 	generation uint64
 	report     memoryhistory.Report
 	err        error
@@ -88,6 +99,7 @@ func (m *appModel) fetchHistoryPanel() tea.Cmd {
 	}
 	p.generation++
 	p.report = nil
+	p.markers = nil
 	p.err = nil
 	p.viewport.reset()
 	reader, ok := m.client.(client.MemoryHistoryReader)
@@ -102,13 +114,25 @@ func (m *appModel) fetchHistoryPanel() tea.Cmd {
 		p.loading = false
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(m.ctx, 10*time.Second)
+	timeout := 10 * time.Second
+	if p.mode == markedHistory {
+		timeout = 13 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(m.ctx, timeout)
 	p.cancel = cancel
 	p.loading = true
-	request, generation := p.request, p.generation
+	request, generation, mode := p.request, p.generation, p.mode
+	markerReader, hasMarkers := m.client.(client.MemoryHistoryContextReader)
 	return func() tea.Msg {
+		if mode == markedHistory {
+			if !hasMarkers {
+				return historyPanelMsg{generation: generation, err: fmt.Errorf("workload change context is unavailable through this reader")}
+			}
+			result, err := markerReader.MemoryHistoryContext(ctx, request, query)
+			return historyPanelMsg{generation: generation, report: result.History, markers: &result.Changes, err: err}
+		}
 		report, err := reader.MemoryHistory(ctx, request, query)
-		return historyPanelMsg{generation, report, err}
+		return historyPanelMsg{generation: generation, report: report, err: err}
 	}
 }
 
@@ -124,6 +148,7 @@ func (m *appModel) receiveHistoryPanel(msg historyPanelMsg) {
 	p.loading = false
 	p.err = msg.err
 	p.report = nil
+	p.markers = nil
 	if msg.err != nil {
 		return
 	}
@@ -136,6 +161,7 @@ func (m *appModel) receiveHistoryPanel(msg historyPanelMsg) {
 		return
 	}
 	p.report = &msg.report
+	p.markers = msg.markers
 }
 
 func (m *appModel) closeHistoryPanel() {
@@ -165,6 +191,18 @@ func (m appModel) historyPanelKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, command
 	case "p":
 		p.source = memoryhistory.Prometheus
+		command := m.fetchHistoryPanel()
+		return m, command
+	case "m":
+		if p.request.Scope == memoryhistory.Node {
+			return m, nil
+		}
+		switch p.mode {
+		case plainHistory:
+			p.mode = markedHistory
+		case markedHistory:
+			p.mode = plainHistory
+		}
 		command := m.fetchHistoryPanel()
 		return m, command
 	case "r":

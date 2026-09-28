@@ -45,6 +45,7 @@ memoryHistory:
   namespaces: []
   nodes: false
   workloads: false
+  markers: false
   credentialsSecret: ""
   caKey: ""
   tokenKey: ""

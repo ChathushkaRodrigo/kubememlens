@@ -12,6 +12,9 @@ func TestRemoteHistoryFlagsAreExplicitAndAuthenticated(t *testing.T) {
 		valid, enabled bool
 	}{
 		{"default", ingestionLegacy, nil, true, false},
+		{"markers without history", ingestionAuthenticated, []string{"--memory-change-markers"}, false, false},
+		{"node markers", ingestionAuthenticated, []string{"--remote-history-enabled", "--remote-history-url=https://history.example", "--remote-history-cluster=test", "--remote-history-ca-file=/trust/ca.crt", "--remote-history-nodes", "--memory-change-markers"}, false, false},
+		{"namespace markers", ingestionAuthenticated, []string{"--remote-history-enabled", "--remote-history-url=https://history.example", "--remote-history-cluster=test", "--remote-history-ca-file=/trust/ca.crt", "--remote-history-namespaces=team-a", "--memory-change-markers"}, true, true},
 		{"unused configuration", ingestionAuthenticated, []string{"--remote-history-url=https://history.example"}, false, false},
 		{"legacy", ingestionLegacy, []string{"--remote-history-enabled", "--remote-history-url=https://history.example", "--remote-history-cluster=test", "--remote-history-ca-file=/trust/ca.crt", "--remote-history-namespaces=team-a"}, false, false},
 		{"missing scope", ingestionAuthenticated, []string{"--remote-history-enabled", "--remote-history-url=https://history.example", "--remote-history-cluster=test"}, false, false},

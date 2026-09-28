@@ -10,7 +10,7 @@ render() {
 render > "${work_dir}/default.yaml"
 render --set memoryHistory.enabled=false > "${work_dir}/disabled.yaml"
 cmp "${work_dir}/default.yaml" "${work_dir}/disabled.yaml"
-for value in 'memoryHistory.enabled=true' 'memoryHistory.nodes=true' 'memoryHistory.workloads=true' 'memoryHistory.url=http://history.example' 'memoryHistory.tokenKey=token' 'memoryHistory.namespaces[0]=INVALID'; do
+for value in 'memoryHistory.enabled=true' 'memoryHistory.nodes=true' 'memoryHistory.workloads=true' 'memoryHistory.markers=true' 'memoryHistory.url=http://history.example' 'memoryHistory.tokenKey=token' 'memoryHistory.namespaces[0]=INVALID'; do
   if render --set "${value}" > "${work_dir}/invalid.yaml" 2> "${work_dir}/error.txt"; then
     echo 'invalid history profile rendered' >&2; exit 1
   fi
@@ -23,4 +23,6 @@ render "${common[@]}" --set memoryHistory.nodes=true --set memoryHistory.workloa
 if render "${common[@]}" --set collector.enabled=false > "${work_dir}/invalid.yaml" 2> "${work_dir}/error.txt"; then
   echo 'history rendered without its authenticated collector' >&2; exit 1
 fi
-go run ./hack/memory-history-contract "${work_dir}/default.yaml" "${work_dir}/namespaces.yaml" "${work_dir}/full.yaml"
+render "${common[@]}" --set memoryHistory.markers=true > "${work_dir}/markers.yaml"
+render "${common[@]}" --set memoryHistory.markers=true --set memoryHistory.workloads=true --set memoryHistory.nodes=true > "${work_dir}/markers-full.yaml"
+go run ./hack/memory-history-contract "${work_dir}/default.yaml" "${work_dir}/namespaces.yaml" "${work_dir}/full.yaml" "${work_dir}/markers.yaml" "${work_dir}/markers-full.yaml"

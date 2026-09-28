@@ -13,10 +13,11 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 4 {
-		fail("expected default, namespace and full history renders")
+	if len(os.Args) != 6 {
+		fail("expected default, namespace, full and two marker history renders")
 	}
 	base, namespace, full := read(os.Args[1]), read(os.Args[2]), read(os.Args[3])
+	verifyMarkers(namespace, full, read(os.Args[4]), read(os.Args[5]))
 	for key, object := range base {
 		if strings.Contains(key, "history-") {
 			fail("default history resource present")

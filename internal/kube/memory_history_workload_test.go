@@ -21,7 +21,7 @@ func historyWorkloadFixture(t *testing.T, kind string) (*workloadFixture, *memor
 		f.pods[i].Status.ContainerStatuses = []corev1.ContainerStatus{{Name: "app", ContainerID: "containerd://" + f.pods[i].Name, State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{StartedAt: metav1.NewTime(f.pods[i].CreationTimestamp.Add(time.Minute))}}}}
 	}
 	v := f.resolver.(*volumeResolver)
-	return f, &memoryHistoryResolver{reader: v.reader, authorize: v.authorize, nodeIdentity: v.nodeUID, calls: v.calls, gate: make(chan struct{}, 1)}
+	return f, &memoryHistoryResolver{reader: v.reader, authorize: v.authorize, nodeIdentity: v.nodeUID, calls: v.calls, gate: make(chan struct{}, 1), subresources: []string{"trends"}, workload: (*volumeBindingQuery).historyWorkload}
 }
 
 func TestHistoryWorkloadResolvesEverySupportedOwnerChain(t *testing.T) {

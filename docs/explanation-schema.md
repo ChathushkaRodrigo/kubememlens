@@ -55,7 +55,8 @@ Capture chooses incident schema 2 when resource metadata is present. Use
 `kubectl memlens capture -n production --pod api-abc --schema-version=1 -o incident.json`
 for an older replay binary; the export records that resource context was omitted.
 Current replay accepts deep schemas 1/2, [restricted schema 3](restricted-incidents.md),
-[Node schema 4](node-incidents.md) and [volume schema 5](volume-context.md).
+[Node schema 4](node-incidents.md), [volume schema 5](volume-context.md) and
+[memory trend schema 6](memory-change-markers.md).
 Unknown or mismatched schemas are rejected.
 
 ## MemoryQoS in version 3

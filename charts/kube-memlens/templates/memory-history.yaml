@@ -1,6 +1,6 @@
 {{- $history := .Values.memoryHistory }}
 {{- if not $history.enabled }}
-{{- if or $history.url $history.cluster $history.namespaces $history.nodes $history.workloads $history.credentialsSecret $history.caKey $history.tokenKey }}
+{{- if or $history.url $history.cluster $history.namespaces $history.nodes $history.workloads $history.markers $history.credentialsSecret $history.caKey $history.tokenKey }}
 {{- fail "memoryHistory configuration requires memoryHistory.enabled" }}
 {{- end }}
 {{- else }}

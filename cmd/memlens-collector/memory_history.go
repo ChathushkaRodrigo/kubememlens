@@ -24,12 +24,13 @@ func registerMemoryHistoryFlags(flags *flag.FlagSet) *memoryHistoryFlags {
 	flags.StringVar(&f.namespaces, "remote-history-namespaces", "", "comma-separated namespaces allowed to use memory history")
 	flags.BoolVar(&f.options.Nodes, "remote-history-nodes", false, "allow separately authorised Node memory history reads")
 	flags.BoolVar(&f.options.Workloads, "remote-history-workloads", false, "resolve current workload members for memory history")
+	flags.BoolVar(&f.options.Markers, "memory-change-markers", false, "enable bounded authorised workload change context for history")
 	return f
 }
 
 func (f *memoryHistoryFlags) resolve(mode string) (*extension.MemoryHistoryOptions, error) {
 	if !f.enabled {
-		if f.options.Endpoint != "" || f.options.Cluster != "" || f.options.CAFile != "" || f.options.BearerTokenFile != "" || f.namespaces != "" || f.options.Nodes || f.options.Workloads {
+		if f.options.Endpoint != "" || f.options.Cluster != "" || f.options.CAFile != "" || f.options.BearerTokenFile != "" || f.namespaces != "" || f.options.Nodes || f.options.Workloads || f.options.Markers {
 			return nil, errors.New("remote history configuration requires remote-history-enabled")
 		}
 		return nil, nil

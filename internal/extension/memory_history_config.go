@@ -16,7 +16,7 @@ import (
 type MemoryHistoryOptions struct {
 	Endpoint, Cluster, CAFile, BearerTokenFile string
 	Namespaces                                 []string
-	Nodes, Workloads                           bool
+	Nodes, Workloads, Markers                  bool
 }
 
 func (o *MemoryHistoryOptions) Validate() error {
@@ -25,6 +25,9 @@ func (o *MemoryHistoryOptions) Validate() error {
 	}
 	if o.Endpoint == "" || o.Cluster == "" || o.CAFile == "" || len(o.Namespaces) > 64 || (!o.Nodes && len(o.Namespaces) == 0) || (o.Workloads && len(o.Namespaces) == 0) {
 		return errors.New("memory history requires a provider, CA bundle, cluster and explicit scopes")
+	}
+	if o.Markers && len(o.Namespaces) == 0 {
+		return errors.New("workload change markers require explicit history namespaces")
 	}
 	seen := map[string]bool{}
 	for _, namespace := range o.Namespaces {
@@ -68,6 +71,18 @@ func (h *Handler) configureMemoryHistory(ctx context.Context, kubeconfig string)
 	}
 	context.AfterFunc(ctx, remote.Close)
 	s := &memoryHistoryService{resolver: resolver, local: h.coordinator.store.MemoryHistory(), remote: remote, namespaces: map[string]bool{}, nodes: o.Nodes, workloads: o.Workloads, gate: make(chan struct{}, 1)}
+	if o.Markers {
+		s.contextResolver, err = kube.NewMemoryHistoryContextResolver(config, h.reads.authoriseVolumeObject, h.coordinator.store.VolumeNodeUID)
+		if err != nil {
+			remote.Close()
+			return err
+		}
+		s.markers, err = kube.NewChangeMarkerProvider(config, h.reads.authoriseVolumeObject)
+		if err != nil {
+			remote.Close()
+			return err
+		}
+	}
 	for _, ns := range o.Namespaces {
 		s.namespaces[ns] = true
 	}
@@ -99,9 +114,15 @@ func (h *Handler) historyResources() []metav1.APIResource {
 	var result []metav1.APIResource
 	if len(o.Namespaces) > 0 {
 		result = append(result, metav1.APIResource{Name: "pods/trends", Namespaced: true, Kind: "MemoryHistory", Verbs: metav1.Verbs{"get"}})
+		if o.Markers {
+			result = append(result, metav1.APIResource{Name: "pods/trends-context", Namespaced: true, Kind: "MemoryHistoryContext", Verbs: metav1.Verbs{"get"}})
+		}
 	}
 	if o.Workloads {
 		result = append(result, metav1.APIResource{Name: "workloads/trends", Namespaced: true, Kind: "MemoryHistory", Verbs: metav1.Verbs{"get"}})
+		if o.Markers {
+			result = append(result, metav1.APIResource{Name: "workloads/trends-context", Namespaced: true, Kind: "MemoryHistoryContext", Verbs: metav1.Verbs{"get"}})
+		}
 	}
 	if o.Nodes {
 		result = append(result, metav1.APIResource{Name: "nodes/trends", Namespaced: false, Kind: "MemoryHistory", Verbs: metav1.Verbs{"get"}})

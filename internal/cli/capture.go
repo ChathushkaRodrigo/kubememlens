@@ -148,6 +148,7 @@ func newCaptureCommand(collectorOptions collectorOptionsProvider) *cobra.Command
 		}
 		return nil
 	}
+	cmd.AddCommand(newCaptureTrendsCommand(collectorOptions))
 	return cmd
 }
 

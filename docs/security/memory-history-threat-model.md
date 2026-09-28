@@ -76,3 +76,33 @@ profiles, cancellation, source switching, terminal bounds and chart permissions.
 Local cluster install, denial, revocation and rollback checks passed in the
 [qualification record](../qualification-results/memory-history-local-kind-2026-09-28/README.md).
 See [the operator contract](../memory-history.md) for source and permission limits.
+
+
+## Optional workload change context
+
+The marker profile adds Kubernetes Events and named controller metadata as
+untrusted evidence sources. A namespace actor can create misleading event reports,
+so markers are labelled as reports and never trigger mutations or establish
+causation. Free-form event text, arbitrary actions/reasons, reporting instances,
+labels and configuration values are excluded from the retained model. Known resize
+phases remain distinct; current revision metadata cannot supply a rollout time.
+
+Require both the named context and existing trends permissions before history or
+marker acquisition. Recheck each disclosed subject/controller UID and parent link,
+the selected lifetime, and caller authority before disclosure. Namespace event list
+permission is separately checked; revoked access discards the response. No default
+viewer role changes and no Node marker permission are introduced. Marker source
+RoleBindings target only the collector in configured namespaces.
+
+The 64-marker/three-owner/128-KiB report, one-page event source, shared 4-MiB object
+budget, operation rate limits, one-operation admission and fixed deadlines bound
+amplification. The complete context stays under the existing 1-MiB response cap.
+Truncation, empty retention, denied access and source failures remain explicit;
+no background watcher or persistent ledger adds a retention surface.
+
+Schema-6 capture uses the existing private atomic writer and a 2-MiB cap. Default
+aliases preserve relationships only within one capture. Decoder validation rejects
+false redaction claims and missing caveats. Comparison does not infer continuity
+between captures with local aliases; literal UID changes remain separate lifetimes.
+This section states the control design; ADV-001's earlier local qualification
+record does not qualify the new marker profile.

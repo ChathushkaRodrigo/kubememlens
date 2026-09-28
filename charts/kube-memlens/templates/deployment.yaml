@@ -58,6 +58,9 @@ spec:
             - {{ printf "--remote-history-namespaces=%s" (join "," .Values.memoryHistory.namespaces) | quote }}
             - "--remote-history-nodes={{ .Values.memoryHistory.nodes }}"
             - "--remote-history-workloads={{ .Values.memoryHistory.workloads }}"
+{{- if .Values.memoryHistory.markers }}
+            - "--memory-change-markers=true"
+{{- end }}
 {{- if .Values.memoryHistory.caKey }}
             - "--remote-history-ca-file=/var/run/memory-history/ca.crt"
 {{- end }}
