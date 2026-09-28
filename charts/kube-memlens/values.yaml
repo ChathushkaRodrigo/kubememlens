@@ -50,6 +50,11 @@ memoryHistory:
   caKey: ""
   tokenKey: ""
 
+# Optional local comparison of authorised workload replicas. No remote provider.
+replicaBaselines:
+  enabled: false
+  namespaces: []
+
 agent:
   enabled: true
   nodeSelector:

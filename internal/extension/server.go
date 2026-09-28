@@ -126,6 +126,9 @@ func (o ServerOptions) Run(ctx context.Context) error {
 	if err := o.Handler.configureVolumeResolver(probeCtx, o.KubeconfigFile); err != nil {
 		return err
 	}
+	if err := o.Handler.configureReplicas(o.KubeconfigFile); err != nil {
+		return err
+	}
 	if err := o.Handler.configureMemoryHistory(probeCtx, o.KubeconfigFile); err != nil {
 		return err
 	}

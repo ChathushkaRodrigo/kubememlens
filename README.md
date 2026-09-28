@@ -234,6 +234,9 @@ isolation and rollback checks. It does not change existing history retention or
 install Prometheus; managed-provider qualification remains separate.
 Opt-in [workload change markers](docs/memory-change-markers.md) add bounded
 rollout, restart and resize context, with redacted capture and offline comparison.
+Optional [replica comparisons](docs/replica-baselines.md) use current local cgroup
+evidence and bounded history. Use `replicas pod` / `replicas workload` or press `B`
+in the TUI; enable explicit namespaces and bind the separate replica viewer role.
 
 Development builds include an optional [volume context profile](docs/volume-context.md) showing filesystem
 usage, CSI health and tmpfs configuration beside memory evidence. Use

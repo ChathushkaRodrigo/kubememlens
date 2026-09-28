@@ -24,6 +24,7 @@ const readAPIVersion = api.MemoryAPIGroup + "/" + api.MemoryAPIVersion
 
 type ReadHandler struct {
 	memoryHistory          *memoryHistoryService
+	replicas               *replicaService
 	podAuthorizer          authorizer.Authorizer
 	accounting             map[string]nodeanalysis.Qualification
 	nodeContextEnabled     bool
@@ -67,6 +68,10 @@ func (h *ReadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set(api.SnapshotSchemaHeader, strconv.Itoa(schema))
+	if info.Subresource == "replicas" {
+		h.serveReplicas(w, r, info)
+		return
+	}
 	if info.Subresource == "trends" || info.Subresource == "trends-context" {
 		h.serveMemoryHistory(w, r, info)
 		return
