@@ -56,6 +56,7 @@ type Manager struct {
 	policy      Policy
 	ctx         context.Context
 	cancel      context.CancelFunc
+	wake        chan struct{}
 	done        chan struct{}
 	closed      bool
 }
@@ -70,7 +71,7 @@ func NewManager(ctx context.Context, deps Dependencies, policy Policy) (*Manager
 		return nil, err
 	}
 	lifetime, cancel := context.WithCancel(ctx)
-	m := &Manager{entries: map[string]*entry{}, deps: deps, policy: policy, ctx: lifetime, cancel: cancel, done: make(chan struct{})}
+	m := &Manager{entries: map[string]*entry{}, deps: deps, policy: policy, ctx: lifetime, cancel: cancel, wake: make(chan struct{}, 1), done: make(chan struct{})}
 	go m.expiryLoop()
 	return m, nil
 }
