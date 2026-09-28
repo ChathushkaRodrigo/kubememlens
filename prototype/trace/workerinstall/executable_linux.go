@@ -1,6 +1,7 @@
 package workerinstall
 
 import (
+	"context"
 	"crypto/sha256"
 	"debug/elf"
 	"encoding/hex"
@@ -16,7 +17,10 @@ const executableSeals = unix.F_SEAL_WRITE | unix.F_SEAL_GROW | unix.F_SEAL_SHRIN
 // Executable copies an independently accepted binary to a sealed executable
 // memfd. Executing this retained descriptor cannot race a path replacement or
 // in-place write to the installation file. The caller owns the returned file.
-func (p *Policy) Executable(path, architecture string) (*os.File, error) {
+func (p *Policy) Executable(ctx context.Context, path, architecture string) (*os.File, error) {
+	if ctx == nil || ctx.Err() != nil {
+		return nil, ErrInstallation
+	}
 	expected, err := p.WorkerSHA256(architecture)
 	if err != nil {
 		return nil, err
@@ -42,8 +46,8 @@ func (p *Policy) Executable(path, architecture string) (*os.File, error) {
 		}
 	}()
 	hash := sha256.New()
-	n, err := io.CopyBuffer(io.MultiWriter(image, hash), io.LimitReader(source, MaxExecutableBytes+1), make([]byte, 64<<10))
-	if err != nil || n != info.Size() || n > MaxExecutableBytes || hex.EncodeToString(hash.Sum(nil)) != expected {
+	n, err := io.CopyBuffer(io.MultiWriter(image, hash), io.LimitReader(executableReader{ctx, source}, MaxExecutableBytes+1), make([]byte, 64<<10))
+	if err != nil || ctx.Err() != nil || n != info.Size() || n > MaxExecutableBytes || hex.EncodeToString(hash.Sum(nil)) != expected {
 		return nil, ErrInstallation
 	}
 	if image.Chmod(0500) != nil {
@@ -61,6 +65,20 @@ func (p *Policy) Executable(path, architecture string) (*os.File, error) {
 	}
 	retained = true
 	return image, nil
+}
+
+// Bound cancellation latency between reads instead of copying a whole image
+// after its session or runtime has been cancelled.
+type executableReader struct {
+	ctx context.Context
+	io.Reader
+}
+
+func (r executableReader) Read(data []byte) (int, error) {
+	if err := r.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return r.Reader.Read(data)
 }
 
 func validateExecutable(image *os.File, architecture string) error {

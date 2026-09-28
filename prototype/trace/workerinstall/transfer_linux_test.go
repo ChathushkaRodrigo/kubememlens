@@ -3,6 +3,7 @@
 package workerinstall
 
 import (
+	"context"
 	"github.com/danushkastanley/kube-memlens/prototype/trace/internal/testworker"
 	"github.com/danushkastanley/kube-memlens/prototype/trace/workercontainment"
 	"os"
@@ -70,7 +71,7 @@ func TestRunningImageFixture(t *testing.T) {
 
 func TestWorkerChecksItsOwnAcceptedImage(t *testing.T) {
 	policy, path := acceptedSelf(t)
-	image, err := policy.Executable(path, runtime.GOARCH)
+	image, err := policy.Executable(context.Background(), path, runtime.GOARCH)
 	if err != nil {
 		t.Fatal(err)
 	}

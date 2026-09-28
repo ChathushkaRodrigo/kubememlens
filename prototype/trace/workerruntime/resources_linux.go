@@ -16,8 +16,8 @@ type resources struct {
 }
 
 func (r *resources) close() error {
-	var failures []error
-	for _, file := range []*os.File{r.target, r.image, r.bundle, r.policy} {
+	failures := []error{r.releaseImage()}
+	for _, file := range []*os.File{r.target, r.bundle, r.policy} {
 		if file != nil {
 			failures = append(failures, file.Close())
 		}
@@ -26,6 +26,15 @@ func (r *resources) close() error {
 		failures = append(failures, r.root.Close())
 	}
 	return errors.Join(failures...)
+}
+
+func (r *resources) releaseImage() error {
+	if r.image == nil {
+		return nil
+	}
+	err := r.image.Close()
+	r.image = nil
+	return err
 }
 
 func duplicate(file *os.File) (*os.File, error) {

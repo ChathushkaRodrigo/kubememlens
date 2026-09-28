@@ -1,6 +1,7 @@
 package workerinstall
 
 import (
+	"context"
 	"github.com/danushkastanley/kube-memlens/prototype/trace/internal/testworker"
 	"os"
 	"os/exec"
@@ -40,7 +41,7 @@ func TestSealedExecutableFixture(t *testing.T) {
 
 func TestAcceptedExecutableRunsFromImmutableDescriptor(t *testing.T) {
 	policy, path := acceptedSelf(t)
-	image, err := policy.Executable(path, runtime.GOARCH)
+	image, err := policy.Executable(context.Background(), path, runtime.GOARCH)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func TestAcceptedExecutableRunsFromImmutableDescriptor(t *testing.T) {
 
 func TestExecutableRejectsUnacceptedOrMismatchedImages(t *testing.T) {
 	policy, path := acceptedSelf(t)
-	if _, err := policy.Executable(path, "unsupported"); err == nil {
+	if _, err := policy.Executable(context.Background(), path, "unsupported"); err == nil {
 		t.Fatal("unaccepted architecture permitted")
 	}
 	config := configuration(t)
@@ -75,7 +76,7 @@ func TestExecutableRejectsUnacceptedOrMismatchedImages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := wrong.Executable(path, runtime.GOARCH); err == nil {
+	if _, err := wrong.Executable(context.Background(), path, runtime.GOARCH); err == nil {
 		t.Fatal("wrong executable digest accepted")
 	}
 	other := "amd64"
@@ -92,14 +93,14 @@ func TestExecutableRejectsUnacceptedOrMismatchedImages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := wrong.Executable(path, other); err == nil {
+	if _, err := wrong.Executable(context.Background(), path, other); err == nil {
 		t.Fatal("wrong ELF architecture accepted")
 	}
 	link := filepath.Join(t.TempDir(), "worker")
 	if os.Symlink(path, link) != nil {
 		t.Fatal("fixture symlink failed")
 	}
-	if _, err := policy.Executable(link, runtime.GOARCH); err == nil {
+	if _, err := policy.Executable(context.Background(), link, runtime.GOARCH); err == nil {
 		t.Fatal("executable symlink accepted")
 	}
 }
@@ -114,7 +115,7 @@ func TestExecutableSnapshotSurvivesSourceReplacement(t *testing.T) {
 	if os.WriteFile(copyPath, data, 0700) != nil {
 		t.Fatal("fixture copy failed")
 	}
-	image, err := policy.Executable(copyPath, runtime.GOARCH)
+	image, err := policy.Executable(context.Background(), copyPath, runtime.GOARCH)
 	if err != nil {
 		t.Fatal(err)
 	}
