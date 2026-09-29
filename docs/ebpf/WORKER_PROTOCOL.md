@@ -29,9 +29,14 @@ snapshots, captures, charts and release artefacts do not use this protocol.
 
 The parent sends one canonical JSON request through a private pipe and closes its
 write end. A four-byte big-endian length precedes every message; the receiver
-rejects lengths above 4,096 bytes before allocation. Unknown fields, aliases,
+rejects lengths above 4,096 bytes before allocating the message payload. Unknown fields, aliases,
 duplicate keys, omitted fields, noncanonical encodings and trailing requests fail.
 The protocol version is independent of the public trace-stream version.
+
+The observation reader uses a fixed 4,100-byte read buffer to coalesce pipe reads.
+Validation and cumulative limits still apply to each message, and terminal EOF is
+checked through that same buffer so prefetched trailing data cannot be hidden.
+Pipe deadlines and process supervision remain responsible for interrupted reads.
 
 The request carries the immutable specification, issue time, absolute deadline
 and accepted programme-manifest digest. It has no executable path, gadget
@@ -121,6 +126,9 @@ qualification is claimed from startup helpers alone.
 Protocol race tests cover canonical requests, malformed input, path consent,
 typed records, byte/event limits, short writes, terminal ordering, contradictory
 counts and redaction. Decoder fuzzing includes a valid request and malformed seeds.
+Read-buffer regressions cover fragmented delivery, bounded reads and an open pipe
+that sends a terminal message without EOF. A real OS-pipe benchmark measures a
+128-event burst; its results do not establish end-to-end resource qualification.
 
 Process tests use real Linux children in a network-disabled, read-only container
 with all capabilities dropped. They cover startup/expiry, ignored SIGTERM,
