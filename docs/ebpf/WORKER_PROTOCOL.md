@@ -122,9 +122,17 @@ request timestamp has no monotonic component, and wall time can change while a
 context timer runs. An earlier parent deadline never becomes request expiry just
 because its cancellation is processed late.
 The grace period and reaping after SIGKILL share a two-second process-exit bound.
+
 A result is accepted only after successful process exit;
 a result followed by non-zero exit fails. The pipe reader is also joined, allowing
 one second for an outstanding output callback. No growing queue retains events.
+
+The constrained SDK skips display-formatter initialisation when there are no SDK
+data sources. The accepted raw-record worker requires that empty data-source
+set and decodes its fixed records itself. This avoids parsing kernel BTF solely
+for unused enum/stack display conversion; BTF needed for verified programme
+relocation and attachment is still required. This SDK patch has a new accepted
+digest, so old signed installation policies cannot silently select it.
 
 The normal-exit change was accepted and exercised in local kernel tests; see
 [ADR 0013](../adr/0013-bound-normal-worker-exit-within-teardown-budget.md).
