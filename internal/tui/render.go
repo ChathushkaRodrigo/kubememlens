@@ -36,7 +36,9 @@ func (m appModel) viewString() string {
 	b.WriteString("\n")
 	b.WriteString(truncate(m.sourceLabel(), width))
 	b.WriteString("\n")
-	if m.historyPanel.open {
+	if m.replicaPanel.open {
+		b.WriteString(m.renderReplicaPanel(width))
+	} else if m.historyPanel.open {
 		b.WriteString(m.renderHistoryPanel(width))
 	} else if m.action.mode != actionClosed {
 		b.WriteString(m.renderAction(width))
@@ -229,6 +231,7 @@ func (m appModel) renderHelp(width int) string {
 		"Enter        drill into Node/namespace Pods or Pod detail",
 		"e            explain selected entity, including Node context",
 		"v / H        volume context / source-labelled memory history",
+		"B            compare authorised Pod or workload replicas",
 		"h / Backspace go back",
 		"k/j or arrows move selection",
 		"PgUp/PgDown  move faster",

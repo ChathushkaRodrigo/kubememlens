@@ -34,7 +34,11 @@ type markerEvents struct {
 }
 
 func (q *markerQuery) events(ctx context.Context, selected memoryhistory.Selection) ([]changemarkers.Marker, changemarkers.Coverage, bool, error) {
-	a := eventAccess(selected.Request.Namespace)
+	return q.eventsForNamespace(ctx, selected.Request.Namespace)
+}
+
+func (q *markerQuery) eventsForNamespace(ctx context.Context, namespace string) ([]changemarkers.Marker, changemarkers.Coverage, bool, error) {
+	a := eventAccess(namespace)
 	if err := q.authorize(ctx, a); err != nil {
 		if markerDenied(err) {
 			return nil, changemarkers.Denied, false, nil
@@ -42,8 +46,10 @@ func (q *markerQuery) events(ctx context.Context, selected memoryhistory.Selecti
 		return nil, changemarkers.Unavailable, false, err
 	}
 	var page markerEvents
+	priorValidation := q.validateJSON
+	defer func() { q.validateJSON = priorValidation }()
 	q.validateJSON = func(body []byte) error { return boundedObjectItems(body, changemarkers.MaxEvents+1) }
-	err := q.get(ctx, "/api/v1/namespaces/"+selected.Request.Namespace+"/events?limit=257", &page)
+	err := q.get(ctx, "/api/v1/namespaces/"+namespace+"/events?limit=257", &page)
 	if ctx.Err() != nil {
 		return nil, changemarkers.Unavailable, false, ctx.Err()
 	}
@@ -70,7 +76,7 @@ func (q *markerQuery) events(ctx context.Context, selected memoryhistory.Selecti
 			continue
 		}
 		object := q.objects[key]
-		if event.Metadata.Namespace != selected.Request.Namespace || event.Regarding != object.ref || event.Metadata.UID == "" || seen[event.Metadata.UID] {
+		if event.Metadata.Namespace != namespace || event.Regarding != object.ref || event.Metadata.UID == "" || seen[event.Metadata.UID] {
 			return nil, changemarkers.Unavailable, false, memoryhistory.ErrInvalid
 		}
 		seen[event.Metadata.UID] = true

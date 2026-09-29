@@ -58,6 +58,7 @@ func NewRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	cmd.AddCommand(newStatusCommand(flags.options))
 	cmd.AddCommand(newDoctorCommand(flags.options))
 	cmd.AddCommand(newHistoryCommand(flags.options))
+	cmd.AddCommand(newReplicasCommand(flags.options))
 	cmd.AddCommand(newCaptureCommand(flags.options))
 	cmd.AddCommand(newReplayCommand())
 	cmd.AddCommand(newCompareCommand(flags.options))

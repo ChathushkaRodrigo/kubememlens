@@ -4,6 +4,12 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 
 ## Unreleased
 
+### Replica memory baselines
+
+- Add opt-in Pod and workload comparisons against four other authorised replicas with matching revision, immutable images and memory resource layout.
+- Show robust peer distributions, outlier magnitude, confidence and explicit exclusions through `replicas` commands and the TUI's B panel. Current charge, available composition, retained growth, limit use, PSI and known local event rates remain separate evidence.
+- Recheck named permissions and current membership before disclosure. Keep the profile disabled by default, with namespace source roles, an unbound viewer role, bounded local retention and no remote provider requirement.
+
 ### Workload change markers
 
 - Add opt-in Pod, container and workload history context with exact instance/owner identity, bounded structured events, source timestamps and explicit retention and clock caveats.

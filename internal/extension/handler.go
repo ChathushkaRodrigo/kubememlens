@@ -34,6 +34,7 @@ const (
 
 type HandlerOptions struct {
 	MemoryHistory          *MemoryHistoryOptions
+	Replicas               *ReplicaOptions
 	NodeAccounting         map[string]nodeanalysis.Qualification
 	AgentUsername          string
 	NodeContextUsername    string
@@ -66,6 +67,9 @@ type identityLimiter struct {
 
 func NewHandler(coordinator *Coordinator, opts HandlerOptions) (*Handler, error) {
 	if err := opts.MemoryHistory.Validate(); err != nil {
+		return nil, err
+	}
+	if err := opts.Replicas.Validate(); err != nil {
 		return nil, err
 	}
 	if coordinator == nil {
