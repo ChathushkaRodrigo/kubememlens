@@ -98,6 +98,13 @@ Raw messages and callback errors must never enter logs or persisted evidence.
 
 ## Supervision and ownership
 
+The worker wakes its ring-buffer reader directly when its context is cancelled,
+using the reader's flush operation. Idle reads time out for the existing
+once-per-second target revalidation, rather than polling cancellation every
+100 ms. The cancellation callback is joined before reader teardown, and a failed
+wake-up invalidates terminal counts. Approved programmes notify on submission;
+event delivery does not wait for the validation timer.
+
 Startup is bounded at five seconds, even for a five-minute request. The supervisor
 enforces the earlier parent/request deadline, uses private OS pipes and sends
 stderr directly to `/dev/null`. Signals use the owned process handle, avoiding
