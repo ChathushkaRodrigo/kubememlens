@@ -1,6 +1,7 @@
 package workeripc
 
 import (
+	"bufio"
 	"io"
 
 	"github.com/danushkastanley/kube-memlens/internal/trace"
@@ -13,11 +14,14 @@ func ReadStream(in io.Reader, request Request, output trace.Output, onReady func
 	if in == nil || output == nil || onReady == nil || request.Validate() != nil {
 		return trace.Result{}, ErrProtocol
 	}
+	// Coalesce pipe reads within one maximum-size framed message. Validation,
+	// cumulative limits and the required terminal EOF use this same reader.
+	stream := bufio.NewReaderSize(in, MaxMessageBytes+4)
 	ready := false
 	var events, bytes uint64
 	for {
 		var message responseWire
-		size, err := receive(in, &message)
+		size, err := receive(stream, &message)
 		if err != nil || message.validate(request) != nil {
 			return trace.Result{}, ErrProtocol
 		}
@@ -29,7 +33,7 @@ func ReadStream(in io.Reader, request Request, output trace.Output, onReady func
 			ready = true
 			onReady()
 		case "result":
-			if (!ready && (message.Result.Termination != trace.EngineFailed || !message.Result.StartedAt.IsZero())) || !message.Result.covers(events) || end(in) != nil {
+			if (!ready && (message.Result.Termination != trace.EngineFailed || !message.Result.StartedAt.IsZero())) || !message.Result.covers(events) || end(stream) != nil {
 				return trace.Result{}, ErrProtocol
 			}
 			return message.Result.result(request)
