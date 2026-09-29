@@ -70,6 +70,7 @@ func (m *Manager) Claim(parent context.Context, info user.Info, namespace, id st
 	lifetime, cancel := context.WithCancelCause(lifetime)
 	e.cancelActive = func(cause error) { cancel(cause); deadlineCancel() }
 	e.expires = expires
+	m.wakeExpiry()
 	e.stage = active
 	e.consumerRunning = true
 	e.consumerDone = make(chan struct{})

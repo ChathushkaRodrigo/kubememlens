@@ -17,6 +17,7 @@ func (m *Manager) finishAdmission(e *entry, err error) {
 
 func (m *Manager) markClosing(e *entry, cause error) {
 	e.stage = closing
+	m.wakeExpiry()
 	if e.cancelActive != nil {
 		e.cancelActive(cause)
 	}
@@ -94,6 +95,7 @@ func (m *Manager) closeEntry(ctx context.Context, e *entry) error {
 		e.retryCleanup = time.Now().Add(time.Second)
 	}
 	m.mu.Unlock()
+	m.wakeExpiry()
 	if err != nil {
 		m.deps.Audit(AuditEvent{Operation: Cancel, Decision: "error", Reason: "cleanup_unconfirmed", Principal: "system"})
 		return ErrUnavailable
@@ -116,6 +118,9 @@ func (m *Manager) sweep(shutdown bool) error {
 		}
 	}
 	m.mu.Unlock()
+	if len(ready) == 0 {
+		return nil
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	var err error
@@ -128,23 +133,18 @@ func (m *Manager) sweep(shutdown bool) error {
 }
 func (m *Manager) expiryLoop() {
 	defer close(m.done)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	ticker.Stop()
-	defer ticker.Stop()
-	var ticks <-chan time.Time
+	timer := time.NewTimer(time.Hour)
+	timer.Stop()
+	defer timer.Stop()
 	for {
 		m.mu.Lock()
-		hasWork := len(m.entries) > 0
+		next := m.nextExpiry(time.Now())
 		m.mu.Unlock()
-		// Keep the existing expiry cadence while state is retained, but do not
-		// wake an empty service. Buffered notifications cover concurrent inserts.
-		if hasWork && ticks == nil {
-			ticker.Reset(100 * time.Millisecond)
-			ticks = ticker.C
-		}
-		if !hasWork && ticks != nil {
-			ticker.Stop()
-			ticks = nil
+		timer.Stop()
+		var ticks <-chan time.Time
+		if !next.IsZero() {
+			timer.Reset(time.Until(next))
+			ticks = timer.C
 		}
 		select {
 		case <-m.wake:

@@ -118,10 +118,14 @@ one per principal, two per namespace, one per node by default and 32 globally.
 The optional API installation flag `--max-node-traces` accepts one or two;
 requests cannot change it or exceed that hard ceiling. The node has
 an independent hard ceiling of two handles and 256 unexpired replay records;
-full replay storage refuses work. Expiry timers sleep while no state is retained
-and resume their 100 ms cadence for reservations, node leases and replay records.
-Node expiry remains independent of
-controller connectivity. Cleanup failures are reported and block new node work.
+full replay storage refuses work. Each expiry loop sleeps until its next retained
+deadline, or indefinitely when empty. New reservations, changed active deadlines
+and cleanup transitions notify the loop so an earlier deadline cannot be missed.
+Unfinished cleanup retains the 100 ms retry cadence; failed controller-to-node
+cleanup keeps its one-second backoff and continues consuming quota. An expired
+execution keeps its handle and replay record until teardown is confirmed.
+Node expiry remains independent of controller connectivity. Cleanup failures
+are reported and block new node work.
 
 A replacement node process cannot confirm that its predecessor cleaned up.
 The API therefore retains the old reservation, including its quota, even if the
