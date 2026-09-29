@@ -178,3 +178,20 @@ func TestRelayRejectsTrailingFrameBeforeForwardingSummary(t *testing.T) {
 		t.Fatal("terminal bypassed EOF validation")
 	}
 }
+
+func TestRelayPreservesValidPrefixBeforeMalformedBufferedEvent(t *testing.T) {
+	lines := bytes.SplitAfter(relayBurst(t), []byte("\n"))
+	prefix := bytes.Join(lines[:4], nil) // Metadata followed by three valid events.
+	data := append(bytes.Clone(prefix), []byte("{}\n")...)
+	out := &batchResponse{ResponseRecorder: httptest.NewRecorder()}
+	r, first := batchRelay(t, data, out)
+	if _, err := r.forwardEvents(t.Context(), first); err == nil {
+		t.Fatal("malformed buffered event accepted")
+	}
+	if r.transportFailed || r.events != 3 || r.written != uint64(len(prefix)) || !bytes.Equal(out.Body.Bytes(), prefix) {
+		t.Fatal("validated prefix or known delivery accounting lost")
+	}
+	if r.batch != [traceframe.MaxBytes]byte{} {
+		t.Fatal("rejected upstream frame retained private bytes")
+	}
+}
