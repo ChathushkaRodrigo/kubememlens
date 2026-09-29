@@ -48,6 +48,7 @@ check-scale-contract:
 check-provider-contract:
 	python3 -m unittest discover -s hack/volume-qualification -p 'test_*.py'
 	hack/test-node-context-contract.sh
+	hack/test-topology-contract.sh
 	hack/test-volume-context-contract.sh
 	python3 -m unittest discover -s hack/node-qualification -p 'test_*.py'
 	python3 -m unittest discover -s hack/provider-profiles -p 'test_*.py'

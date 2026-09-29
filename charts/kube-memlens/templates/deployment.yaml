@@ -84,6 +84,9 @@ spec:
 {{- if .Values.nodeContext.volumeStats }}
             - "--volume-stats-enabled=true"
 {{- end }}
+{{- if .Values.nodeContext.topology.enabled }}
+            - "--topology-enabled=true"
+{{- end }}
 {{- if .Values.nodeContext.enabled }}
             - "--node-context-username=system:serviceaccount:{{ .Values.namespace.name }}:kube-memlens-node-context"
 {{- if .Values.nodeContext.accountingConfigMap }}

@@ -61,6 +61,12 @@ func newReplayCommand() *cobra.Command {
 				}
 				return replayNode(cmd.OutOrStdout(), *document.Node, nodeRef)
 			}
+			if document.Topology != nil {
+				if podRef != "" {
+					return fmt.Errorf("schema 7 contains Node topology; --pod is unavailable")
+				}
+				return replayTopology(cmd.OutOrStdout(), *document.Topology, nodeRef)
+			}
 			if nodeRef != "" {
 				return fmt.Errorf("--node requires a schema-4 incident")
 			}

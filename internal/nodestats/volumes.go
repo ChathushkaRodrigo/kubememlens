@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/danushkastanley/kube-memlens/internal/memorytopology"
 	"github.com/danushkastanley/kube-memlens/internal/nodecontext"
 	"github.com/danushkastanley/kube-memlens/internal/volumecontext"
 	"github.com/danushkastanley/kube-memlens/internal/volumehealth"
@@ -20,8 +21,9 @@ const (
 // Sample separates private volume records from Node memory. Read preserves
 // the existing memory-only interface; publishers use ReadSample instead.
 type Sample struct {
-	Node    nodecontext.Observation `json:"node"`
-	Volumes *volumecontext.Batch    `json:"-"`
+	Topology *memorytopology.Observation `json:"-"`
+	Node     nodecontext.Observation     `json:"node"`
+	Volumes  *volumecontext.Batch        `json:"-"`
 }
 
 type SampleSource interface {
