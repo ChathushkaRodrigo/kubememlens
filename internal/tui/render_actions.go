@@ -40,23 +40,7 @@ func (m appModel) renderAction(width int) string {
 			"Enter writes mode 0600 · Esc cancels · existing files are never replaced silently",
 		}
 	case actionResultMode:
-		title := m.action.result.title
-		if title == "" {
-			title = "Incident action"
-		}
-		lines = append(lines, title, "")
-		if m.action.inFlight {
-			lines = append(lines, "Working…")
-		} else if m.action.err != nil {
-			lines = append(lines, "Error: "+m.action.err.Error())
-		}
-		lines = append(lines, m.action.result.lines...)
-		if m.action.result.overwriteRequired {
-			lines = append(lines, "", "Destination: "+m.action.result.outputPath, "Press f to confirm replacement, or Esc to cancel.")
-		}
-		if !m.action.inFlight && !m.action.result.overwriteRequired {
-			lines = append(lines, "", "Enter or Esc closes this result.")
-		}
+		return m.renderActionResult(width)
 	default:
 		return ""
 	}

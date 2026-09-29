@@ -249,7 +249,7 @@ Pod budgets and in-place resize appear in detailed explanations, comparisons and
 
 Pod and workload explanations show investigation severity, independent confidence, caveats, and exact gauge/counter evidence windows. They support a versioned, privacy-restrained machine contract through `-o json|yaml`; see [the schema](docs/explanation-schema.md). An optional read-only [K9s plugin](docs/k9s-integration.md) opens the selected Pod explanation with `Shift-M`.
 
-Read-only composition-aware guidance is exportable with `kubectl memlens recommend pod <name> -n <namespace> -o text|json|yaml` or the corresponding `workload` command. Recommendations include rationale and guard conditions and never mutate resources.
+Read-only composition-aware guidance is exportable with `kubectl memlens recommend pod <name> -n <namespace> -o text|json|yaml` or the corresponding `workload` command. Recommendations include rationale and guard conditions and never mutate resources. Add `--profilers` for [declared Go heap-profile handoffs](docs/profiler-handoffs.md); the commands are displayed for operator review and never executed. Long terminal action results support wrapping, `j`/`k`, Page Up/Down and `g`/`G` navigation.
 
 ## Using Without Port-Forward
 
