@@ -27,7 +27,7 @@
       "dependenciesSHA256": "845b1d02e55c697c2237887d66f76e9ec7afe46ec80d17b204a3403a107dfc4a"
     }
   },
-  "sourceManifestSHA256": "1edc2422b915ae6b95e242000bb51e469b602b25ae8837657e34dd774e967bae",
+  "sourceManifestSHA256": "1fb4ff88566e9918a24214c4ab82091e504882a3bfd9685018c6c6a220a6a5ae",
   "nativeChecks": {
     "attachmentVocabulary": true,
     "filesObjectPreparation": true,
@@ -45,7 +45,8 @@
     "host-checks.log": "c11fb70dc1d5eb9a19f29cd4c5bdc027ce91a627a6b25bfe3f58d3ffca894612",
     "reproduced-workers/build.json": "191b1f206af3f397ba1b1ad754057efde114dca8f0d24cc24920285a13ae1252",
     "reproduced-workers/build.log": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd",
-    "worker-vuln.json": "4667027bd97add5471fd9ac33f150b80b528e3c22b6fe2bef03d240d52d8b284"
+    "worker-vuln.json": "4667027bd97add5471fd9ac33f150b80b528e3c22b6fe2bef03d240d52d8b284",
+    "final-workers/build.json": "897280e48541d4b0f07551218eea110571e1a776f63892690d07668b5742a17a"
   },
   "vulnerabilityScan": {
     "configuration": {
@@ -63,5 +64,6 @@
         "module"
       ]
     }
-  }
+  },
+  "integratedMainReproductionUnchanged": true
 }
