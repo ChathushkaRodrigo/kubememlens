@@ -10,7 +10,7 @@ import (
 func (s *Service) prune(now time.Time) {
 
 	for id, l := range s.leases {
-		if !now.Before(l.expires) {
+		if l.execution == nil && !now.Before(l.expires) {
 			_ = s.stopLease(id, l, admission.ErrExpired)
 		}
 	}
@@ -27,7 +27,7 @@ func (s *Service) expire(ctx context.Context) {
 	defer timer.Stop()
 	for {
 		s.mu.Lock()
-		next := s.nextExpiry(time.Now())
+		next := s.nextExpiry()
 		s.mu.Unlock()
 		timer.Stop()
 		var ticks <-chan time.Time
