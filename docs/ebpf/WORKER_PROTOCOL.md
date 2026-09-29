@@ -38,6 +38,13 @@ Validation and cumulative limits still apply to each message, and terminal EOF i
 checked through that same buffer so prefetched trailing data cannot be hidden.
 Pipe deadlines and process supervision remain responsible for interrupted reads.
 
+The worker coalesces output in one fixed 4,100-byte buffer. Full buffers flush
+immediately; partial buffers schedule a flush after five milliseconds, subject to
+scheduling and the pipe's one-second write deadline. Readiness flushes before
+activation and the terminal result flushes before successful exit. Short or failed
+writes are terminal and never retried; pending bytes are cleared on exit. Framing,
+event quotas, cumulative byte limits and parent supervision remain unchanged.
+
 The request carries the immutable specification, issue time, absolute deadline
 and accepted programme-manifest digest. It has no executable path, gadget
 reference, bytecode, attach point or arbitrary parameter dictionary. It is not an
