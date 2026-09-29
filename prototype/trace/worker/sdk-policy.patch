@@ -903,3 +903,11 @@
  	if err := i.initEnumFormatter(gadgetCtx); err != nil {
  		return fmt.Errorf("initializing enum formatter: %w", err)
  	}
+--- a/pkg/gadget-service/api/api_grpc.pb.go
++++ b/pkg/gadget-service/api/api_grpc.pb.go
+@@ -2,3 +2,5 @@
+ 
++//go:build ignore
++
+ package api
+ 

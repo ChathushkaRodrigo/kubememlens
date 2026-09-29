@@ -25,6 +25,13 @@ trace. `prototype/trace/workeripc` and `prototype/trace/workerprocess` contain n
 BPF loader. The isolated worker module owns the SDK. Ordinary collector binaries,
 snapshots, captures, charts and release artefacts do not use this protocol.
 
+The constrained SDK excludes its unused generated gRPC client/server transport
+from compilation. Its data models and parameter types remain available to the
+fixed image operator. Both worker architecture dependency checks reject gRPC
+packages, so the transport cannot silently return through a new import. This
+constraint changes the accepted SDK patch digest and requires a newly matched
+worker, signed programme bundle and installation policy.
+
 ## Request and observations
 
 The parent sends one canonical JSON request through a private pipe and closes its
