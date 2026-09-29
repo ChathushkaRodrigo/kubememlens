@@ -38,6 +38,15 @@ Validation and cumulative limits still apply to each message, and terminal EOF i
 checked through that same buffer so prefetched trailing data cannot be hidden.
 Pipe deadlines and process supervision remain responsible for interrupted reads.
 
+The Node may hand off at most 16 validated file observations synchronously when
+complete messages are already present in that read buffer. It never reads ahead
+to fill a batch or waits on a timer. A sparse event is delivered before reading
+an incomplete next message. The session coalesces confirmed-path frames within
+one 8 KiB write, retaining per-event validation, output/event ceilings and ordered
+aggregate accounting. Default output remains aggregate-only. A failed transport
+write cannot produce a terminal summary; scratch frame bytes and observation
+references are cleared after each call. No asynchronous queue is introduced.
+
 The worker coalesces output in one fixed 4,100-byte buffer. Full buffers flush
 immediately; partial buffers schedule a flush after five milliseconds, subject to
 scheduling and the pipe's one-second write deadline. Readiness flushes before
