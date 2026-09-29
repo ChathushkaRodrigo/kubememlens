@@ -16,6 +16,9 @@ namespace:
 nodeContext:
   enabled: false
   volumeStats: false
+  topology:
+    enabled: false
+    cgroupRoot: /sys/fs/cgroup
   kubeletCAConfigMap: ""
   kubeletAudience: ""
   kubeletPort: 10250

@@ -28,6 +28,7 @@ type ReadHandler struct {
 	podAuthorizer          authorizer.Authorizer
 	accounting             map[string]nodeanalysis.Qualification
 	nodeContextEnabled     bool
+	topologyEnabled        bool
 	volumeStatsEnabled     bool
 	volumeWorkloadsEnabled bool
 	volumeNamespaces       map[string]bool

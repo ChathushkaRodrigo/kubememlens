@@ -56,6 +56,9 @@ func newCompareCommand(collectorOptions collectorOptionsProvider) *cobra.Command
 				if err != nil {
 					return fmt.Errorf("read after bundle: %w", err)
 				}
+				if beforeDocument.Topology != nil || afterDocument.Topology != nil {
+					return fmt.Errorf("topology captures support replay; NUMA aliases cannot establish continuity for comparison")
+				}
 				if beforeDocument.History != nil || afterDocument.History != nil || includeTrends {
 					if includeVolumes {
 						return fmt.Errorf("history comparison requires --trends without --volumes")

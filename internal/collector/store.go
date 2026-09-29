@@ -99,7 +99,7 @@ func (s *Store) ReplaceNodeSnapshot(snapshot api.AgentSnapshot) (int, error) {
 }
 
 func (s *Store) ReplaceAuthenticatedNodeSnapshot(snapshot api.AgentSnapshot, uid string) (int, error) {
-	if snapshot.NodeContext != nil || len(snapshot.VolumeBatch) > 0 {
+	if snapshot.NodeContext != nil || len(snapshot.VolumeBatch) > 0 || len(snapshot.Topology) > 0 {
 		return 0, nodecontext.ErrInvalidObservation
 	}
 	s.mu.Lock()

@@ -4,6 +4,12 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 
 ## Unreleased
 
+### Optional NUMA and HugeTLB context
+
+- Add bounded read-only NUMA and HugeTLB sources, a named Node topology endpoint and a separate section in Node detail. Keep ordinary memory totals and Pod views unchanged.
+- Keep pool total, outstanding reservations, current use, cgroup byte limits and cumulative allocation-limit failures separate. Missing topology never establishes balance or pressure.
+- Add explicit schema-7 capture with source clocks, caveats and default Node/domain aliases. Keep ordinary Node captures at schema 4 and require a separate, unbound read role for the opt-in profile.
+
 ### Replica memory baselines
 
 - Add opt-in Pod and workload comparisons against four other authorised replicas with matching revision, immutable images and memory resource layout.

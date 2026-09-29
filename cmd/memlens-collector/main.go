@@ -46,6 +46,7 @@ func main() {
 	nodeContextUsername := flag.String("node-context-username", "", "optional distinct Node-context producer ServiceAccount username")
 	volumeNamespacesText := flag.String("volume-context-namespaces", "", "comma-separated namespaces for optional volume context reads")
 	volumeStatsEnabled := flag.Bool("volume-stats-enabled", false, "accept bounded volume statistics from the optional Node-context producer")
+	topologyEnabled := flag.Bool("topology-enabled", false, "accept and serve optional Node-only NUMA and HugeTLB context")
 	volumeHealthEnabled := flag.Bool("volume-health-enabled", false, "read source-separated CSI health for configured volume namespaces")
 	volumeWorkloadsEnabled := flag.Bool("volume-workloads-enabled", false, "read bounded live workload ownership for configured volume namespaces")
 	agentUsername := flag.String("agent-username", "system:serviceaccount:kube-memlens:kube-memlens-agent", "exact Kubernetes agent ServiceAccount username")
@@ -106,6 +107,10 @@ func main() {
 
 	if *nodeContextUsername != "" && *ingestionMode != ingestionAuthenticated {
 		fmt.Fprintln(os.Stderr, "Node context requires authenticated ingestion")
+		os.Exit(2)
+	}
+	if *topologyEnabled && (*ingestionMode != ingestionAuthenticated || *nodeContextUsername == "") {
+		fmt.Fprintln(os.Stderr, "topology requires authenticated ingestion and the separate Node-context producer")
 		os.Exit(2)
 	}
 	volumeNamespaces, err := extension.VolumeNamespaces(*volumeNamespacesText)
@@ -171,7 +176,7 @@ func main() {
 			MemoryHistory:    remoteHistory,
 			Replicas:         replicas,
 			VolumeNamespaces: volumeNamespaces, VolumeStatsEnabled: *volumeStatsEnabled, VolumeHealthEnabled: *volumeHealthEnabled, VolumeWorkloadsEnabled: *volumeWorkloadsEnabled,
-			NodeAccounting: accounting, AgentUsername: *agentUsername, NodeContextUsername: *nodeContextUsername, MaxSnapshotBytes: handlerOpts.MaxSnapshotBytes,
+			NodeAccounting: accounting, AgentUsername: *agentUsername, NodeContextUsername: *nodeContextUsername, TopologyEnabled: *topologyEnabled, MaxSnapshotBytes: handlerOpts.MaxSnapshotBytes,
 			MaxConcurrent: *ingestionMaxConcurrent, RequestsPerSec: *ingestionRequestsPerSecond,
 			Burst: *ingestionBurst, MaxIdentities: storeLimits.MaxNodes,
 			Logf: func(format string, args ...any) { fmt.Printf(format+"\n", args...) },

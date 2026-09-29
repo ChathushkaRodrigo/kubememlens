@@ -17,6 +17,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/danushkastanley/kube-memlens/internal/api"
+	"github.com/danushkastanley/kube-memlens/internal/memorytopology"
 	"github.com/danushkastanley/kube-memlens/internal/nodeanalysis"
 	"github.com/danushkastanley/kube-memlens/internal/nodecontext"
 	"github.com/danushkastanley/kube-memlens/internal/volumecontext"
@@ -38,6 +39,7 @@ type HandlerOptions struct {
 	NodeAccounting         map[string]nodeanalysis.Qualification
 	AgentUsername          string
 	NodeContextUsername    string
+	TopologyEnabled        bool
 	VolumeStatsEnabled     bool
 	VolumeHealthEnabled    bool
 	VolumeWorkloadsEnabled bool
@@ -84,6 +86,9 @@ func NewHandler(coordinator *Coordinator, opts HandlerOptions) (*Handler, error)
 	if opts.VolumeStatsEnabled && opts.NodeContextUsername == "" {
 		return nil, fmt.Errorf("volume statistics require the separate Node-context producer")
 	}
+	if opts.TopologyEnabled && opts.NodeContextUsername == "" {
+		return nil, fmt.Errorf("topology requires the separate Node-context producer")
+	}
 	namespaces, err := VolumeNamespaces(strings.Join(opts.VolumeNamespaces, ","))
 	if err != nil {
 		return nil, err
@@ -113,6 +118,7 @@ func NewHandler(coordinator *Coordinator, opts HandlerOptions) (*Handler, error)
 	}
 	reads := NewReadHandler(coordinator.store, coordinator.opts.Handler)
 	reads.nodeContextEnabled = opts.NodeContextUsername != ""
+	reads.topologyEnabled = opts.TopologyEnabled
 	reads.volumeStatsEnabled = opts.VolumeStatsEnabled
 	reads.volumeWorkloadsEnabled = opts.VolumeWorkloadsEnabled
 	reads.volumeNamespaces = map[string]bool{}
@@ -238,6 +244,9 @@ func (h *Handler) snapshot(w http.ResponseWriter, r *http.Request) {
 	maxBytes := h.opts.MaxSnapshotBytes
 	if claims.Role == NodeContextProducer {
 		nodeLimit := int64(nodecontext.MaxObservationBytes + 8192)
+		if h.opts.TopologyEnabled {
+			nodeLimit += memorytopology.MaxObservationBytes
+		}
 		if h.opts.VolumeStatsEnabled {
 			nodeLimit += volumecontext.MaxBatchBytes
 		}
@@ -298,6 +307,11 @@ func (h *Handler) snapshot(w http.ResponseWriter, r *http.Request) {
 	if len(request.Snapshot.VolumeBatch) > 0 && !h.opts.VolumeStatsEnabled {
 		result = "invalid_snapshot"
 		writeAPIError(w, http.StatusForbidden, "producer_scope", "volume statistics are disabled")
+		return
+	}
+	if len(request.Snapshot.Topology) > 0 && !h.opts.TopologyEnabled {
+		result = "invalid_snapshot"
+		writeAPIError(w, http.StatusForbidden, "producer_scope", "topology is disabled")
 		return
 	}
 	response, duplicate, err := h.coordinator.Accept(claims, request)
