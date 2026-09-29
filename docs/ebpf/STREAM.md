@@ -222,6 +222,13 @@ and byte ceilings, terminal reservation and summary accounting. EOF before a
 summary and any frame after a summary invalidate the stream. The caller must
 bound underlying transport reads and consume through EOF.
 
+Canonical event frames use exact typed re-encoding to check field spelling,
+placement, required nullable fields and duplicate keys before semantic validation.
+They contain no raw JSON subtrees. Metadata, summaries and noncanonical input use
+the strict token parser; legal whitespace and field ordering remain accepted,
+and forwarding preserves the received bytes. Differential tests compare both
+syntax paths so the optimisation does not broaden the accepted protocol.
+
 Core verification covers round trips, privacy, strict decoding, visible text
 escaping, reader limits, event/output/duration ceilings, partial and slow writes,
 permission revalidation, concurrent callbacks, one-use sessions and cleanup before

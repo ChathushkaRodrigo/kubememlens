@@ -3,7 +3,6 @@ package traceframe
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -30,17 +29,8 @@ func decodeEnvelope(data []byte) (envelope, error) {
 	if len(data) == 0 || len(data) > MaxBytes || data[len(data)-1] != '\n' || bytes.ContainsRune(data[:len(data)-1], '\n') || !utf8.Valid(data) {
 		return envelope{}, ErrInvalid
 	}
-	keys := json.NewDecoder(bytes.NewReader(data))
-	if uniqueValue(keys, 0, "root") != nil {
-		return envelope{}, ErrInvalid
-	}
-	if _, err := keys.Token(); err != io.EOF {
-		return envelope{}, ErrInvalid
-	}
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	var e envelope
-	if decoder.Decode(&e) != nil || !SupportedVersion(e.Version) {
+	e, err := decodeFrameSyntax(data)
+	if err != nil || !SupportedVersion(e.Version) {
 		return envelope{}, ErrInvalid
 	}
 	payloads := 0
