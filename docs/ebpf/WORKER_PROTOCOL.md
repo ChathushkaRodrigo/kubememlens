@@ -100,6 +100,11 @@ A valid terminal message or natural request expiry permits one second for normal
 exit, allowing final counters to drain after the observation deadline. An earlier
 parent deadline remains cancellation. Event callbacks stop at the deadline;
 terminal draining cannot forward late events or accept malformed output.
+Natural expiry requires `DeadlineExceeded` for the exact request deadline on the
+effective context. It is not inferred from a fresh wall-clock reading: the UTC
+request timestamp has no monotonic component, and wall time can change while a
+context timer runs. An earlier parent deadline never becomes request expiry just
+because its cancellation is processed late.
 The grace period and reaping after SIGKILL share a two-second process-exit bound.
 A result is accepted only after successful process exit;
 a result followed by non-zero exit fails. The pipe reader is also joined, allowing
