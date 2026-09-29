@@ -10,6 +10,11 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 - Keep pool total, outstanding reservations, current use, cgroup byte limits and cumulative allocation-limit failures separate. Missing topology never establishes balance or pressure.
 - Add explicit schema-7 capture with source clocks, caveats and default Node/domain aliases. Keep ordinary Node captures at schema 4 and require a separate, unbound read role for the opt-in profile.
 
+### Language-profiler handoffs
+
+- Add opt-in recommendation schema 4 and terminal guidance for explicitly declared Go heap-profile workflows. Commands analyse existing local profiles and are never executed by KubeMemLens.
+- Require fresh, complete container evidence; abstain on unknown declarations, sidecars, stale data and unsupported diagnoses. Public captures continue to strip profiler metadata.
+
 ### Replica memory baselines
 
 - Add opt-in Pod and workload comparisons against four other authorised replicas with matching revision, immutable images and memory resource layout.
