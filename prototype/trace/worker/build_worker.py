@@ -11,6 +11,8 @@ import os
 from pathlib import Path
 import subprocess
 
+from worker_dependencies import verify as verify_dependencies
+
 ROOT = Path(__file__).resolve().parents[3]
 WORKER = ROOT / "prototype/trace/worker"
 BUILDER = "golang:1.27.1-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125"
@@ -35,7 +37,7 @@ def verify_sdk():
 
 def inputs():
     files = [ROOT / name for name in ("go.mod", "go.sum", "LICENSE", "NOTICE")]
-    files += [WORKER / name for name in ("build_worker.py", "prepare_sdk.py", "sdk_download.py")]
+    files += [WORKER / name for name in ("build_worker.py", "prepare_sdk.py", "sdk_download.py", "worker_dependencies.py")]
     for directory in (ROOT / "internal", ROOT / "prototype/trace"):
         for p in directory.rglob("*"):
             if not p.is_file() or ".sdk" in p.parts:
@@ -80,8 +82,7 @@ done
     workers = {}
     for architecture in ("arm64", "amd64"):
         dependencies = output / f"dependencies-{architecture}.txt"
-        if "github.com/inspektor-gadget/inspektor-gadget/pkg/socketenricher" in dependencies.read_text().splitlines():
-            raise ValueError("worker must not initialise unused socket probes")
+        verify_dependencies(dependencies.read_text())
         first, second = output / f"worker-{architecture}-1", output / f"worker-{architecture}-2"
         digest = sha(first)
         if sha(second) != digest or not 0 < first.stat().st_size <= 128 << 20:

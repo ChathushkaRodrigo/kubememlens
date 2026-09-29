@@ -13,6 +13,12 @@ changes the executable lifetime: the sealed worker is reverified on activation,
 shared by active workers and released after their last exit. New resource and
 kernel qualification remain pending; the historical failed runs are unchanged.
 
+[ADR 0020](../../docs/adr/0020-limit-worker-sdk-to-reviewed-attachments.md) narrows
+the worker SDK to the tracepoint and fentry/fexit classes already accepted by the
+signed object policy. Ordinary worker checks and reproducible builds reject
+container-discovery and network/TC/uprobe dependencies. The changed patch digest
+requires a new matched candidate; size reduction is not resource qualification.
+
 This separate module provides `memlens-trace doctor`. It runs bounded,
 non-attaching Linux feature probes for the accepted engine baseline. A supported
 result does **not** approve incident tracing or custom programmes. See the

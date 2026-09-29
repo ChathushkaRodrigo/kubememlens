@@ -4,6 +4,11 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 
 ## Unreleased
 
+### Optional worker attachment scope
+
+- Restrict the constrained SDK to the tracepoint and fentry/fexit classes already permitted by signed file/cache/OOM objects, rejecting other classes before map loading.
+- Remove unused discovery and network/TC/uprobe backend dependencies from the worker, with both-architecture dependency checks and non-loading object-preparation regressions. Preserve sealed execution and all resource gates; a new matched candidate still needs kernel qualification.
+
 ### Optional NUMA and HugeTLB context
 
 - Add bounded read-only NUMA and HugeTLB sources, a named Node topology endpoint and a separate section in Node detail. Keep ordinary memory totals and Pod views unchanged.
