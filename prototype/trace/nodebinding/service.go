@@ -164,10 +164,7 @@ func (s *Service) bind(ctx context.Context, r bindRequest) (bindResponse, error)
 		return bindResponse{}, admission.ErrCapacity
 	}
 	s.seen[r.ID] = r.Expires
-	select {
-	case s.wake <- struct{}{}:
-	default:
-	}
+	s.wakeExpiry()
 	// The preflight adapter must report an observed successful baseline; merely
 	// naming a profile is not a substitute for executing it in the node runtime.
 	profile, err := s.preflight(ctx)
