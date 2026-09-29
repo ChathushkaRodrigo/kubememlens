@@ -232,6 +232,8 @@ if [ -n "${E2E_KIND_CONFIG:-}" ]; then
 fi
 kind create cluster "${kind_args[@]}"
 cluster_created=true
+source hack/lib/helm-hook-preflight.sh
+prefetch_helm_hook_image "${cluster_name}" "${chart}" "${work_dir}"
 if [ "${E2E_RUN_AGENTLESS_SMOKE:-false}" = true ]; then
   AGENTLESS_KUBECONFIG="${kubeconfig}" AGENTLESS_CONTEXT="kind-${cluster_name}" \
     AGENTLESS_ARTIFACT_DIR="${artifact_dir:-${work_dir}/artifacts}/agentless" \

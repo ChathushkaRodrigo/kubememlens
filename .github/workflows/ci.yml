@@ -115,6 +115,7 @@ jobs:
       - name: Test shell helpers
         run: |
           hack/test-retry.sh
+          python3 hack/test_helm_hook_preflight.py
           make check-scale-contract
           make check-provider-contract
           make check-terminal-contract
