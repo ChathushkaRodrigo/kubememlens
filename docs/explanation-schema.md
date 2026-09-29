@@ -116,3 +116,14 @@ interactive output. They are removed from default incident exports.
 kind and schema; existing memory and restricted output versions are unchanged.
 Snapshot schema 6 and incident schema 5 are separate contracts. See the
 [volume workflow](volume-context.md) for bounds, permissions and legacy export.
+
+## Explicit profiler handoffs
+
+`recommend pod|workload --profilers` emits recommendation schema **4**: the
+ordinary recommendation fields plus `profilerHandoffs`. Each item identifies the
+authorised container and an `available` or `unavailable` state with a reason.
+Available items contain a typed `handoff` with profile/runtime, declaration basis,
+prerequisites, risks, fixed local commands, verification steps and official
+references. Unavailable items omit it. Commands are never executed. Default
+recommendations remain schema1; restricted schema2 and volume schema3 are unchanged.
+See [profiler handoffs](profiler-handoffs.md) for the declaration and evidence gates.
