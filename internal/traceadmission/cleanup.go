@@ -17,6 +17,7 @@ func (m *Manager) finishAdmission(e *entry, err error) {
 
 func (m *Manager) markClosing(e *entry, cause error) {
 	e.stage = closing
+	m.wakeExpiry()
 	if e.cancelActive != nil {
 		e.cancelActive(cause)
 	}
@@ -94,6 +95,7 @@ func (m *Manager) closeEntry(ctx context.Context, e *entry) error {
 		e.retryCleanup = time.Now().Add(time.Second)
 	}
 	m.mu.Unlock()
+	m.wakeExpiry()
 	if err != nil {
 		m.deps.Audit(AuditEvent{Operation: Cancel, Decision: "error", Reason: "cleanup_unconfirmed", Principal: "system"})
 		return ErrUnavailable
@@ -116,6 +118,9 @@ func (m *Manager) sweep(shutdown bool) error {
 		}
 	}
 	m.mu.Unlock()
+	if len(ready) == 0 {
+		return nil
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	var err error
@@ -128,10 +133,21 @@ func (m *Manager) sweep(shutdown bool) error {
 }
 func (m *Manager) expiryLoop() {
 	defer close(m.done)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
+	timer := time.NewTimer(time.Hour)
+	timer.Stop()
+	defer timer.Stop()
 	for {
+		m.mu.Lock()
+		next := m.nextExpiry(time.Now())
+		m.mu.Unlock()
+		timer.Stop()
+		var ticks <-chan time.Time
+		if !next.IsZero() {
+			timer.Reset(time.Until(next))
+			ticks = timer.C
+		}
 		select {
+		case <-m.wake:
 		case <-m.ctx.Done():
 			m.mu.Lock()
 			m.closed = true
@@ -147,7 +163,7 @@ func (m *Manager) expiryLoop() {
 			}
 			m.mu.Unlock()
 			return
-		case <-ticker.C:
+		case <-ticks:
 			_ = m.sweep(false)
 		}
 	}

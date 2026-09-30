@@ -226,6 +226,18 @@ go run ./cmd/kubectl-memlens compare --before before.json --after after.json --w
 
 Restricted mode also supports [private capture, offline replay and working-set comparison](docs/restricted-incidents.md), with schema 3 and explicit partial-evidence caveats.
 
+Development builds include optional [memory trends](docs/memory-history.md) from
+an operator-owned, identity-enriched Prometheus service. Use `history trends` or
+press `H` in the TUI to choose remote working set/RSS or explicit local history.
+The feature is disabled by default and has passed local installation, reader
+isolation and rollback checks. It does not change existing history retention or
+install Prometheus; managed-provider qualification remains separate.
+Opt-in [workload change markers](docs/memory-change-markers.md) add bounded
+rollout, restart and resize context, with redacted capture and offline comparison.
+Optional [replica comparisons](docs/replica-baselines.md) use current local cgroup
+evidence and bounded history. Use `replicas pod` / `replicas workload` or press `B`
+in the TUI; enable explicit namespaces and bind the separate replica viewer role.
+
 Development builds include an optional [volume context profile](docs/volume-context.md) showing filesystem
 usage, CSI health and tmpfs configuration beside memory evidence. Use
 `kubectl memlens volumes pod <name> -n <namespace>` or press `v` in a Pod/workload
@@ -237,7 +249,7 @@ Pod budgets and in-place resize appear in detailed explanations, comparisons and
 
 Pod and workload explanations show investigation severity, independent confidence, caveats, and exact gauge/counter evidence windows. They support a versioned, privacy-restrained machine contract through `-o json|yaml`; see [the schema](docs/explanation-schema.md). An optional read-only [K9s plugin](docs/k9s-integration.md) opens the selected Pod explanation with `Shift-M`.
 
-Read-only composition-aware guidance is exportable with `kubectl memlens recommend pod <name> -n <namespace> -o text|json|yaml` or the corresponding `workload` command. Recommendations include rationale and guard conditions and never mutate resources.
+Read-only composition-aware guidance is exportable with `kubectl memlens recommend pod <name> -n <namespace> -o text|json|yaml` or the corresponding `workload` command. Recommendations include rationale and guard conditions and never mutate resources. Add `--profilers` for [declared Go heap-profile handoffs](docs/profiler-handoffs.md); the commands are displayed for operator review and never executed. Long terminal action results support wrapping, `j`/`k`, Page Up/Down and `g`/`G` navigation.
 
 ## Using Without Port-Forward
 

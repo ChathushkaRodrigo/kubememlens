@@ -18,7 +18,7 @@ import (
 
 func newCompareCommand(collectorOptions collectorOptionsProvider) *cobra.Command {
 	var namespace, beforePath, afterPath, incidentPodRef, incidentWorkloadRef, nodeRef string
-	var includeVolumes bool
+	var includeVolumes, includeTrends bool
 	cmd := &cobra.Command{
 		Use:   "compare [pod-a] [pod-b]",
 		Short: "Compare two live Pods or one Pod across incident bundles",
@@ -32,6 +32,9 @@ func newCompareCommand(collectorOptions collectorOptionsProvider) *cobra.Command
 			return cobra.ExactArgs(2)(command, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if includeTrends && (beforePath == "" || afterPath == "" || includeVolumes) {
+				return fmt.Errorf("--trends requires --before and --after without --volumes")
+			}
 			if nodeRef != "" && (beforePath == "" || afterPath == "") {
 				return fmt.Errorf("--node comparison requires --before and --after")
 			}
@@ -42,7 +45,7 @@ func newCompareCommand(collectorOptions collectorOptionsProvider) *cobra.Command
 						selected++
 					}
 				}
-				if beforePath == "" || afterPath == "" || selected > 1 || (selected == 0 && !includeVolumes) {
+				if beforePath == "" || afterPath == "" || selected > 1 || (selected == 0 && !includeVolumes && !includeTrends) {
 					return fmt.Errorf("incident comparison requires --before, --after, and exactly one of --pod, --workload or --node")
 				}
 				beforeDocument, err := incident.Read(beforePath)
@@ -52,6 +55,15 @@ func newCompareCommand(collectorOptions collectorOptionsProvider) *cobra.Command
 				afterDocument, err := incident.Read(afterPath)
 				if err != nil {
 					return fmt.Errorf("read after bundle: %w", err)
+				}
+				if beforeDocument.Topology != nil || afterDocument.Topology != nil {
+					return fmt.Errorf("topology captures support replay; NUMA aliases cannot establish continuity for comparison")
+				}
+				if beforeDocument.History != nil || afterDocument.History != nil || includeTrends {
+					if includeVolumes {
+						return fmt.Errorf("history comparison requires --trends without --volumes")
+					}
+					return compareHistoryDocuments(cmd.OutOrStdout(), beforeDocument, afterDocument, incidentPodRef, incidentWorkloadRef, nodeRef)
 				}
 				if beforeDocument.Volume != nil || afterDocument.Volume != nil || includeVolumes {
 					return compareVolumeDocuments(cmd.OutOrStdout(), beforeDocument, afterDocument, incidentPodRef, incidentWorkloadRef, nodeRef)
@@ -130,6 +142,7 @@ func newCompareCommand(collectorOptions collectorOptionsProvider) *cobra.Command
 	cmd.Flags().StringVar(&incidentPodRef, "pod", "", "Pod to compare across bundles as <namespace>/<name>")
 	cmd.Flags().StringVar(&incidentWorkloadRef, "workload", "", "workload to compare across bundles as <namespace>/<kind>/<name>")
 	cmd.Flags().StringVar(&nodeRef, "node", "", "Node to compare across schema-4 bundles")
+	cmd.Flags().BoolVar(&includeTrends, "trends", false, "compare source-labelled memory trends and markers in two schema-6 captures")
 	cmd.Flags().BoolVar(&includeVolumes, "volumes", false, "compare authorised live volume evidence or two schema-5 captures")
 	return cmd
 }

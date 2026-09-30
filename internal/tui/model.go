@@ -12,6 +12,8 @@ import (
 )
 
 type appModel struct {
+	historyPanel          historyPanel
+	replicaPanel          replicaPanel
 	ctx                   context.Context
 	client                client.SnapshotReader
 	observationReader     observation.Reader
@@ -180,6 +182,12 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusErr = nil
 		m.reconcileCurrentViewport(selectedKey)
 		return m, m.ensureHistoryTarget()
+	case replicaPanelMsg:
+		m.receiveReplicaPanel(msg)
+		return m, nil
+	case historyPanelMsg:
+		m.receiveHistoryPanel(msg)
+		return m, nil
 	case historyMsg:
 		if m.selectedHistory.complete(msg, time.Now()) {
 			m.cancelHistoryRequest()
@@ -203,6 +211,8 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *appModel) clearRevokedData() {
+	m.closeReplicaPanel()
+	m.closeHistoryPanel()
 	m.clearVolumeTarget()
 	m.clearNodeTarget()
 	m.clearHistoryTarget()
@@ -242,6 +252,12 @@ func (m *appModel) updatePodTrends(next []api.PodSnapshot) {
 }
 
 func (m appModel) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if m.replicaPanel.open {
+		return m.replicaPanelKey(msg)
+	}
+	if m.historyPanel.open {
+		return m.historyPanelKey(msg)
+	}
 	if m.action.mode != actionClosed {
 		return m.handleActionKey(msg)
 	}
@@ -276,6 +292,12 @@ func (m appModel) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case "?":
 		m.help = !m.help
+	case "B":
+		command := m.openReplicaPanel()
+		return m, command
+	case "H":
+		command := m.openHistoryPanel()
+		return m, command
 	case "a":
 		m.action.mode = actionMenu
 		m.action.err = nil

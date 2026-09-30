@@ -8,6 +8,52 @@ All notable changes will be documented here. KubeMemLens intends to follow [Sema
 
 - Report a container once when it creates its own sub-cgroups (systemd, Docker-in-Docker). Nested cgroups were listed as extra entries with the same container ID and their memory was counted twice.
 
+### Optional worker attachment scope
+
+- Restrict the constrained SDK to the tracepoint and fentry/fexit classes already permitted by signed file/cache/OOM objects, rejecting other classes before map loading.
+- Remove unused discovery and network/TC/uprobe backend dependencies from the worker, with both-architecture dependency checks and non-loading object-preparation regressions. Preserve sealed execution and all resource gates; a new matched candidate still needs kernel qualification.
+
+### Optional NUMA and HugeTLB context
+
+- Add bounded read-only NUMA and HugeTLB sources, a named Node topology endpoint and a separate section in Node detail. Keep ordinary memory totals and Pod views unchanged.
+- Keep pool total, outstanding reservations, current use, cgroup byte limits and cumulative allocation-limit failures separate. Missing topology never establishes balance or pressure.
+- Add explicit schema-7 capture with source clocks, caveats and default Node/domain aliases. Keep ordinary Node captures at schema 4 and require a separate, unbound read role for the opt-in profile.
+
+### Language-profiler handoffs
+
+- Add opt-in recommendation schema 4 and terminal guidance for explicitly declared Go heap-profile workflows. Commands analyse existing local profiles and are never executed by KubeMemLens.
+- Require fresh, complete container evidence; abstain on unknown declarations, sidecars, stale data and unsupported diagnoses. Public captures continue to strip profiler metadata.
+
+### Replica memory baselines
+
+- Add opt-in Pod and workload comparisons against four other authorised replicas with matching revision, immutable images and memory resource layout.
+- Show robust peer distributions, outlier magnitude, confidence and explicit exclusions through `replicas` commands and the TUI's B panel. Current charge, available composition, retained growth, limit use, PSI and known local event rates remain separate evidence.
+- Recheck named permissions and current membership before disclosure. Keep the profile disabled by default, with namespace source roles, an unbound viewer role, bounded local retention and no remote provider requirement.
+
+### Workload change markers
+
+- Add opt-in Pod, container and workload history context with exact instance/owner identity, bounded structured events, source timestamps and explicit retention and clock caveats.
+- Add CLI/TUI marker selection and schema-6 capture, replay and comparison. Default captures use local aliases; comparisons never infer identity continuity across alias sets or splice memory across Pod UIDs.
+- Keep existing history responses and viewer roles unchanged. Optional namespace event/owner roles, named context permissions and disclosure-time rechecks govern the additional reads.
+
+### Optional memory trends
+
+- Add named Pod, container, workload and Node history reads from a fixed, verified-TLS Prometheus source, with immutable instance labels, bounded queries and explicit source, freshness and gap semantics.
+- Add CLI and TUI source selection with cancellation and explicit local fallback. Provider waits use a separate read gate; existing local history and incident formats remain unchanged.
+- Keep the chart profile disabled by default, with separate acquisition and unbound viewer roles. Verify local installation, reader isolation, revocation, bounded queries, terminal source switching and rollback. Managed-provider qualification remains separate.
+
+### Optional dependency notices
+
+- Retain notices from compiled package directories and their module ancestors, including vendored forks. Keep their relative paths, exclude Go source files from the notice inventory and reject package directories outside their module.
+
+### Optional admission idle cost
+
+- Suspend expiry timers while the optional API and node service hold no state. Resume the existing 100 ms cadence for reservations, leases and replay records, including failed-cleanup retries. Resource qualification remains pending.
+
+### Optional worker startup
+
+- Remove unused socket-probe initialisation from the constrained SDK and strip worker debug sections from reproducible builds. Bind the updated SDK patch into signed acceptance and retain executable sealing and attachment/cleanup checks. Fresh kernel and resource qualification remains required.
+
 ### Dependency security
 
 - Update OpenTelemetry to v1.45.0 for the exporter-configuration logging advisory, with its required transitive dependencies.

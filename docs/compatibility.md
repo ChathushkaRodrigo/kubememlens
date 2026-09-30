@@ -188,3 +188,11 @@ See [volume context](volume-context.md) for disclosure and compatibility details
 The local hostpath CSI fixture does not qualify EBS, GCE PD or Azure Disk CSI.
 Usage, health and source availability remain separate provider capabilities;
 no storage-operation latency support is claimed.
+
+### Optional Node topology
+
+[NUMA and HugeTLB context](node-memory-topology.md) uses snapshot schema 7 and
+explicit Node incident schema 7. Ordinary memory quantities and schema-4 Node
+captures are unchanged. The profile adds read-only host source mounts and a
+separate, unbound Node topology reader role. Local source evidence is not a
+managed-provider compatibility claim.

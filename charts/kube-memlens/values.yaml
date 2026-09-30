@@ -16,6 +16,9 @@ namespace:
 nodeContext:
   enabled: false
   volumeStats: false
+  topology:
+    enabled: false
+    cgroupRoot: /sys/fs/cgroup
   kubeletCAConfigMap: ""
   kubeletAudience: ""
   kubeletPort: 10250
@@ -34,6 +37,25 @@ volumeContext:
   workloads: false
   enabled: false
   health: false
+  namespaces: []
+
+# Optional history query adapter. The operator owns the remote service and its
+# immutable identity labels. Credentials come only from an existing Secret.
+memoryHistory:
+  enabled: false
+  url: ""
+  cluster: ""
+  namespaces: []
+  nodes: false
+  workloads: false
+  markers: false
+  credentialsSecret: ""
+  caKey: ""
+  tokenKey: ""
+
+# Optional local comparison of authorised workload replicas. No remote provider.
+replicaBaselines:
+  enabled: false
   namespaces: []
 
 agent:
